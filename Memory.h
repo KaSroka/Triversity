@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 29-08-2017
- * last modification: 29-08-2017
+ * created on: 03-09-2017
+ * last modification: 03-09-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,85 +27,28 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_WIDGETS_H_
-#define _MICROHAL_WIDGETS_H_
+#ifndef _MICROHAL_MEMORY_H_
+#define _MICROHAL_MEMORY_H_
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
-#include <string.h>
-#include <functional>
-
-#include "Drawing.h"
 
 /* **************************************************************************************************************************************************
  * CLASS
  */
 
-namespace Drawing {
 template <typename T>
-class ValueUpDown : public Widget {
- private:
-    void UpdateValue() {
-        char buff[50];
-        itoa(mValue, buff, 10);
-        mValueLabel.SetText(buff);
-    }
+class ExternalMemoryObject {
+ protected:
+    void Write();
+    const T& Read();
 
  public:
-    ValueUpDown(T& aValue, const std::string& aName = "numeric") : Widget{}, mValue{aValue} {
-        mNameLabel.SetText(aName);
-        mValueLabel.SetText("0");
-    }
-
-    virtual void Draw(Graphics& aGraphics) noexcept override { mContainer.Draw(aGraphics); }
-
-    virtual const Vector2D& GetRequestedSize() const noexcept override { return mContainer.GetRequestedSize(); }
-
-    virtual void HandleSizeChange() noexcept override { mContainer.SetSize(GetSize()); }
-
-    virtual void HandleButtonEvent(const ButtonEvent& aEvent) noexcept override {
-        switch (aEvent) {
-            case ButtonEvent::LEFT:
-                mValue--;
-                UpdateValue();
-                break;
-            case ButtonEvent::RIGHT:
-                mValue++;
-                UpdateValue();
-                break;
-            default:
-                break;
-        }
-    }
-
-    virtual void Reset() noexcept override { mContainer.Reset(); }
-
- private:
-    Label mNameLabel{Fonts::RobotoMono::pt8};
-    EmptyWidget mSpacer{};
-    Label mValueLabel{Fonts::RobotoMono::pt8};
-    HContainer mContainer{{mNameLabel, 0.65f}, {mSpacer, 0.1f}, {mValueLabel, 0.25f}};
-    T& mValue;
-};
-
-class Button : public Label {
- public:
-    Button(const std::string& aName = "button") : Label{Fonts::RobotoMono::pt8, aName} {}
-
-    virtual void HandleButtonEvent(const ButtonEvent& aEvent) noexcept override {
-        switch (aEvent) {
-            case ButtonEvent::OK:
-                CallbackFunction.emit();
-                break;
-            default:
-                break;
-        }
-    }
-
-    microhal::Signal<> CallbackFunction{};
-
  private:
 };
-}
 
-#endif  // _MICROHAL_WIDGETS_H_
+class ExternalMemoryMap {};
+
+class ExternalMemory {};
+
+#endif  // _MICROHAL_MEMORY_H_

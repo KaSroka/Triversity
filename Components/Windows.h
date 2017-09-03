@@ -74,12 +74,13 @@ class MainWindow : public Window {
 
  private:
     Window* mChild;
-    NumericUpDown mWidget1{"Value 1"};
-    NumericUpDown mWidget2{"Value 2"};
-    NumericUpDown mWidget3{"Value 3"};
-    NumericUpDown mWidget4{"Value 4"};
-    NumericUpDown mWidget5{"Value 5"};
-    NumericUpDown mWidget6{"Value 6"};
+    int32_t value{0};
+    ValueUpDown<int32_t> mWidget1{value, "Value 1"};
+    ValueUpDown<int32_t> mWidget2{value, "Value 2"};
+    ValueUpDown<int32_t> mWidget3{value, "Value 3"};
+    ValueUpDown<int32_t> mWidget4{value, "Value 4"};
+    ValueUpDown<int32_t> mWidget5{value, "Value 5"};
+    ValueUpDown<int32_t> mWidget6{value, "Value 6"};
     Button mChildButton{"Sub menu"};
     microhal::Slot_0<MainWindow, &MainWindow::JumpToChild> mSubMenu{};
     ScrollableList mList{mWidget1, mWidget2, mWidget3, mWidget4, mWidget5, mWidget6, mChildButton};
@@ -111,8 +112,10 @@ class SubWindow : public Window {
 
  private:
     Window* mParent;
-    NumericUpDown mWidget1{"Sub menu value 1"};
-    NumericUpDown mWidget2{"Sub menu value 2"};
+    int32_t value1{0};
+    int32_t value2{0};
+    ValueUpDown<int32_t> mWidget1{value1, "Sub menu value 1"};
+    ValueUpDown<int32_t> mWidget2{value2, "Sub menu value 2"};
     Button mExitButton{"Exit"};
     ScrollableList mList{mWidget1, mWidget2, mExitButton};
     microhal::Slot_0<SubWindow, &SubWindow::Exit> mExit{};
