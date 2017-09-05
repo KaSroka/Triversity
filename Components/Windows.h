@@ -44,9 +44,17 @@ class StatusBar : public Window {
  public:
     StatusBar() : Window{{container}, {{0, 0}, {128, 16}}} { container.SetSize(GetSize()); }
 
+    void SetVoltage(float aVoltage) { voltage.SetValue((int32_t)(aVoltage * 10 / 3.0f)); }
+    void SetRSSI(float aRSSI, size_t aChannel) { rssi[aChannel].SetRange((aRSSI * 10 - 1) / 4.0f); }
+
  private:
-    Label label1{Fonts::RobotoMono::pt8, "Status bar placeholder"};
-    HContainer container{{label1, 1.0f}};
+    Number voltage{Fonts::RobotoLight::pt10};
+    Label vSign{Fonts::RobotoLight::pt10, "V"};
+    Label rssiNum[3]{{Fonts::RobotoLight::pt10, "1"}, {Fonts::RobotoLight::pt10, "2"}, {Fonts::RobotoLight::pt10, "3"}};
+    Range rssi[3]{};
+    EmptyWidget spacer{};
+    HContainer container{{voltage, 1.0f},    {spacer, 0.6f},  {rssiNum[0], 0.3f}, {rssi[0], 0.5f},    {spacer, 0.3f},
+                         {rssiNum[1], 0.3f}, {rssi[1], 0.5f}, {spacer, 0.3f},     {rssiNum[2], 0.3f}, {rssi[2], 0.5f}};
 };
 
 class MainWindow : public Window {

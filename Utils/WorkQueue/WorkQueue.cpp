@@ -41,7 +41,7 @@ void WorkQueue::WorkThread(void* arg) noexcept {
     WorkRequest request;
     while (1) {
         xQueueReceive(queue, &request, portMAX_DELAY);
-        request.signal.emit(request.arg);
+        request.mSignal.emit(request.mArg);
     }
 }
 

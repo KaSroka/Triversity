@@ -27,26 +27,26 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _MICROHAL_WORKQUEUET_H_
+#define _MICROHAL_WORKQUEUET_H_
+
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
 
 #include "microhal.h"
 
+#include "WorkRequest.h"
+
 using namespace microhal;
 
 namespace WorkQueue {
-
-struct WorkRequest {
-    Signal<void*> signal;
-    void* arg;
-};
 
 class WorkQueue {
  public:
     WorkQueue() noexcept {
         mWorkQueue = xQueueCreate(10, sizeof(WorkRequest));
-        xTaskCreate(WorkThread, "WQ", configMINIMAL_STACK_SIZE, mWorkQueue, 1, nullptr);
+        xTaskCreate(WorkThread, "WQ", configMINIMAL_STACK_SIZE, mWorkQueue, 0, nullptr);
     }
 
     void Add(WorkRequest aRequest) noexcept { xQueueSend(mWorkQueue, &aRequest, portMAX_DELAY); }
@@ -65,3 +65,5 @@ class WorkQueue {
 
 extern WorkQueue workQueue;
 }
+
+#endif  // _MICROHAL_WORKQUEUET_H_

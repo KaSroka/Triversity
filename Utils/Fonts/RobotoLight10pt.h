@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 08-08-2017
- * last modification: 08-08-2017
+ * created on: 05-09-2017
+ * last modification: 05-09-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,24 +27,20 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_FONTS_H_
-#define _MICROHAL_FONTS_H_
+#ifndef _MICROHAL_ROBOTOLIGHT10PT_H_
+#define _MICROHAL_ROBOTOLIGHT10PT_H_
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
 
 #include "Font.h"
 
-#include "Consolas12pt.h"
-#include "Consolas8pt.h"
-#include "Roboto8pt.h"
-#include "Roboto9pt.h"
-#include "RobotoLight10pt.h"
-#include "RobotoMono10pt.h"
-#include "RobotoMono8pt.h"
+namespace Fonts {
 
-/* **************************************************************************************************************************************************
- * CLASS
- */
+namespace RobotoLight {
 
-#endif  // _MICROHAL_FONTS_H_
+extern const Font pt10;
+}
+}
+
+#endif  // _MICROHAL_ROBOTOLIGHT10PT_H_

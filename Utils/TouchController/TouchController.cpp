@@ -96,19 +96,19 @@ void TouchController::TouchProcess(void *arg) {
     while (1) {
         if (touchController->Process() == TSL_STATUS_OK) {
             if (keyOk.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonOk.Click, nullptr});
+                WorkQueue::workQueue.Add({touchController->buttonOk.Click});
             }
             if (keyUp.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonUp.Click, nullptr});
+                WorkQueue::workQueue.Add({touchController->buttonUp.Click});
             }
             if (keyDown.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonDown.Click, nullptr});
+                WorkQueue::workQueue.Add({touchController->buttonDown.Click});
             }
             if (keyLeft.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonLeft.Click, nullptr});
+                WorkQueue::workQueue.Add({touchController->buttonLeft.Click});
             }
             if (keyRight.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonRight.Click, nullptr});
+                WorkQueue::workQueue.Add({touchController->buttonRight.Click});
             }
             //            if (LinRots[0].p_Data->Change && LinRots[0].p_Data->StateId == TSL_STATEID_DETECT) {
             //                detectPosition = LinRots[0].p_Data->Position;

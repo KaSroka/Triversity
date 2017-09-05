@@ -42,6 +42,42 @@
  */
 
 namespace Drawing {
+
+class Number : public Label {
+ public:
+    Number(const Font& aFont) : Label{aFont, "0"} {}
+    void SetValue(int32_t aValue) {
+        char buff[50];
+        itoa(aValue, buff, 10);
+        SetText(buff);
+    }
+};
+
+class Range : public Widget {
+ private:
+ public:
+    Range() : mRange{0} {}
+    void SetRange(float aRange) { mRange = static_cast<uint8_t>(std::round(aRange * mMaxRange)); }
+    virtual void Draw(Graphics& aGraphics) noexcept override {
+        if (mRange) {
+            for (uint8_t x = 0; x < mMaxRange; x++) {
+                for (uint8_t y = 0; y < mMaxRange; y++) {
+                    if (x < mRange && y < x) aGraphics.SetPixel({x, mMaxRange - y - 1}, true);
+                }
+            }
+        } else {
+            for (uint8_t x = 1; x < mMaxRange - 1; x++) {
+                aGraphics.SetPixel({x, x}, true);
+                aGraphics.SetPixel({x, mMaxRange - 1 - x - 1}, true);
+            }
+        }
+    }
+
+ private:
+    uint8_t mRange;
+    static constexpr uint8_t mMaxRange{10};
+};
+
 template <typename T>
 class ValueUpDown : public Widget {
  private:
@@ -81,16 +117,16 @@ class ValueUpDown : public Widget {
     virtual void Reset() noexcept override { mContainer.Reset(); }
 
  private:
-    Label mNameLabel{Fonts::RobotoMono::pt8};
+    Label mNameLabel{Fonts::RobotoLight::pt10};
     EmptyWidget mSpacer{};
-    Label mValueLabel{Fonts::RobotoMono::pt8};
+    Label mValueLabel{Fonts::RobotoLight::pt10};
     HContainer mContainer{{mNameLabel, 0.65f}, {mSpacer, 0.1f}, {mValueLabel, 0.25f}};
     T& mValue;
 };
 
 class Button : public Label {
  public:
-    Button(const std::string& aName = "button") : Label{Fonts::RobotoMono::pt8, aName} {}
+    Button(const std::string& aName = "button") : Label{Fonts::RobotoLight::pt10, aName} {}
 
     virtual void HandleButtonEvent(const ButtonEvent& aEvent) noexcept override {
         switch (aEvent) {

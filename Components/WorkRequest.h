@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 08-08-2017
- * last modification: 08-08-2017
+ * created on: 04-09-2017
+ * last modification: 04-09-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,24 +27,24 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_FONTS_H_
-#define _MICROHAL_FONTS_H_
+#ifndef _MICROHAL_WORKREQUEST_H_
+#define _MICROHAL_WORKREQUEST_H_
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
 
-#include "Font.h"
+#include "microhal.h"
 
-#include "Consolas12pt.h"
-#include "Consolas8pt.h"
-#include "Roboto8pt.h"
-#include "Roboto9pt.h"
-#include "RobotoLight10pt.h"
-#include "RobotoMono10pt.h"
-#include "RobotoMono8pt.h"
+union WorkRequestArg {
+    float RSSI1;
+    float RSSI2;
+    float RSSI3;
+    float Voltage;
+};
 
-/* **************************************************************************************************************************************************
- * CLASS
- */
+struct WorkRequest {
+    microhal::Signal<WorkRequestArg&> mSignal;
+    WorkRequestArg mArg;
+};
 
-#endif  // _MICROHAL_FONTS_H_
+#endif  // _MICROHAL_WORKREQUEST_H_

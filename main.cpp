@@ -1,3 +1,4 @@
+#include <Analog.h>
 #include <atomic>
 #include <chrono>
 #include <sstream>
@@ -84,6 +85,8 @@ StatusBar statusBar{};
 SubWindow subWindow{};
 MainWindow window{subWindow};
 
+Analog analog;
+
 int main(void) {
     GPIO en_rx_1(bsp::VideoSwitch::EN_RX_1, GPIO::Direction::Output);
     GPIO en_rx_2(bsp::VideoSwitch::EN_RX_2, GPIO::Direction::Output);
@@ -105,11 +108,15 @@ int main(void) {
     windowManager.SetStatusBar(statusBar);
     windowManager.SetCurrentWindow(window);
 
-    touchController.buttonOk.Click.connect([](void* aArg) { windowManager.HandleButtonEvent(ButtonEvent::OK); });
-    touchController.buttonUp.Click.connect([](void* aArg) { windowManager.HandleButtonEvent(ButtonEvent::UP); });
-    touchController.buttonDown.Click.connect([](void* aArg) { windowManager.HandleButtonEvent(ButtonEvent::DOWN); });
-    touchController.buttonLeft.Click.connect([](void* aArg) { windowManager.HandleButtonEvent(ButtonEvent::LEFT); });
-    touchController.buttonRight.Click.connect([](void* aArg) { windowManager.HandleButtonEvent(ButtonEvent::RIGHT); });
+    touchController.buttonOk.Click.connect([](WorkRequestArg& aArg) { windowManager.HandleButtonEvent(ButtonEvent::OK); });
+    touchController.buttonUp.Click.connect([](WorkRequestArg& aArg) { windowManager.HandleButtonEvent(ButtonEvent::UP); });
+    touchController.buttonDown.Click.connect([](WorkRequestArg& aArg) { windowManager.HandleButtonEvent(ButtonEvent::DOWN); });
+    touchController.buttonLeft.Click.connect([](WorkRequestArg& aArg) { windowManager.HandleButtonEvent(ButtonEvent::LEFT); });
+    touchController.buttonRight.Click.connect([](WorkRequestArg& aArg) { windowManager.HandleButtonEvent(ButtonEvent::RIGHT); });
+    analog.VoltageUpdate.connect([](WorkRequestArg& aArg) { statusBar.SetVoltage(aArg.Voltage); });
+    analog.RSSIUpdate[0].connect([](WorkRequestArg& aArg) { statusBar.SetRSSI(aArg.RSSI1, 0); });
+    analog.RSSIUpdate[1].connect([](WorkRequestArg& aArg) { statusBar.SetRSSI(aArg.RSSI2, 1); });
+    analog.RSSIUpdate[2].connect([](WorkRequestArg& aArg) { statusBar.SetRSSI(aArg.RSSI3, 2); });
 
     //    int32_t frameTime = 0;
 
@@ -128,7 +135,7 @@ int main(void) {
         }
 
         // frameTime = static_cast<int32_t>(drawTime.getDuration().count()) / 1000;
-
+        //
         en_rx_1 = true;
         en_rx_2 = false;
         en_rx_3 = false;

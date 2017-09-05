@@ -63,52 +63,48 @@ class Channels {
     class Descriptor {
      private:
         uint32_t mFrequency;
-        std::string mName;
         Channel mChannel;
+        const char* mName;
 
      public:
-        constexpr Descriptor(uint32_t aFrequency, const std::string& aName, Channels::Channel aChannel)
-            : mFrequency{aFrequency}, mName{aName}, mChannel{aChannel} {}
+        constexpr Descriptor(uint32_t aFrequency, Channels::Channel aChannel, const char aName[3]);
         constexpr uint32_t GetFrequency() const noexcept { return mFrequency; }
         constexpr uint32_t GetRegValue() const noexcept { return CHANNEL_REG(mFrequency); }
-        constexpr const std::string& GetName() const noexcept { return mName; }
+        const std::string GetName() const noexcept { return mName; }
         constexpr Channels::Channel GetChannel() const noexcept { return mChannel; }
     };
 
-    friend constexpr Channel& operator++(Channel& aChannel) const noexcept {
-        if (Channel < (Channel::END - 1)) aChannel++;
+    friend constexpr Channel& operator++(Channel& aChannel) noexcept {
+        if (aChannel < (Channel::END - 1)) aChannel++;
         return aChannel;
     }
 
-    friend constexpr Channel& operator--(Channel& aChannel) const noexcept {
-        if (Channel > Channel::START) aChannel--;
+    friend constexpr Channel& operator--(Channel& aChannel) noexcept {
+        if (aChannel > Channel::START) aChannel--;
         return aChannel;
     }
 
-    friend constexpr Channel& operator++(Channel& aChannel, int)const noexcept { return ++aChannel; }
+    friend constexpr Channel& operator++(Channel& aChannel, int)noexcept { return ++aChannel; }
 
-    friend constexpr Channel& operator--(Channel& aChannel, int)const noexcept { return --aChannel; }
+    friend constexpr Channel& operator--(Channel& aChannel, int)noexcept { return --aChannel; }
 
-    static constexpr const Descriptor& GetByChannel(Channels::Channel aChannel) const noexcept {
+    static const Descriptor& GetByChannel(Channels::Channel aChannel) noexcept {
         return *std::find_if(mChannels.cbegin(), mChannels.cend(),
                              [&aChannel](const Descriptor& aDescriptor) { return aDescriptor.GetChannel() == aChannel; });
     }
 
-    static constexpr const Descriptor& GetByName(const std::string& aName) const noexcept {
+    static const Descriptor& GetByName(const std::string& aName) noexcept {
         return *std::find_if(mChannels.cbegin(), mChannels.cend(),
                              [&aName](const Descriptor& aDescriptor) { return aDescriptor.GetName() == aName; });
     }
 
-    static constexpr const Descriptor& GetByFrequency(uint32_t aFrequency) const noexcept {
+    static const Descriptor& GetByFrequency(uint32_t aFrequency) noexcept {
         return *std::find_if(mChannels.cbegin(), mChannels.cend(),
                              [&aFrequency](const Descriptor& aDescriptor) { return aDescriptor.GetFrequency() == aFrequency; });
     }
 
  private:
-    static constexpr std::array<Descriptor, Channels::Channel::END> mChannels{
-        BAND_FREQUENCIES(A, 5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725), BAND_FREQUENCIES(B, 5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866),
-        BAND_FREQUENCIES(E, 5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945), BAND_FREQUENCIES(F, 5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880),
-        BAND_FREQUENCIES(R, 5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917), BAND_FREQUENCIES(L, 5362, 5399, 5436, 5473, 5510, 5547, 5584, 5621)};
+    static const std::array<Descriptor, Channels::Channel::END> mChannels;
 };
 
 class RX5808 : private microhal::SPIDevice {

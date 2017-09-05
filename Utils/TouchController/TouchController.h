@@ -36,6 +36,7 @@
 #include "tsl.h"
 
 #include "TouchControllerInternals.h"
+#include "WorkRequest.h"
 
 /* **************************************************************************************************************************************************
  * CLASS
@@ -106,9 +107,9 @@ class TouchController {
  public:
     class Button {
      public:
-        microhal::Signal<void *> Click;
-        microhal::Signal<void *> LongClick;
-        microhal::Signal<void *> Release;
+        microhal::Signal<WorkRequestArg &> Click;
+        microhal::Signal<WorkRequestArg &> LongClick;
+        microhal::Signal<WorkRequestArg &> Release;
     };
 
     TouchController() noexcept;
