@@ -103,6 +103,13 @@ class HContainer : public Widget {
         }
     }
 
+    virtual void Enable(bool aEnable) noexcept override {
+        for (auto &component : mComponents) {
+            Widget &widget = component.widget;
+            widget.Enable(aEnable);
+        }
+    }
+
     virtual const Vector2D &GetRequestedSize() const noexcept override { return mRequestedSize; }
 
     virtual void HandleSizeChange() noexcept override { SetupWidgets(); }
@@ -173,6 +180,13 @@ class VContainer : public Widget {
         for (auto &component : mComponents) {
             Widget &widget = component.widget;
             widget.Draw(aGraphics.CreateView(widget.GetDrawingRectangle()));
+        }
+    }
+
+    virtual void Enable(bool aEnable) noexcept override {
+        for (auto &component : mComponents) {
+            Widget &widget = component.widget;
+            widget.Enable(aEnable);
         }
     }
 

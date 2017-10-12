@@ -33,22 +33,137 @@
  * INCLUDES
  */
 
+#include <limits>
+
+#include "microhal.h"
+
+#include "Stringify.h"
+#include "WorkQueue.h"
+
 /* **************************************************************************************************************************************************
  * CLASS
  */
 
 template <typename T>
-class ExternalMemoryObject {
- protected:
-    void Write();
-    const T& Read();
+class ExternalMemoryObject;
 
+class ExternalMemory {
  public:
+    ExternalMemory(size_t aSize) : mSize{aSize} {}
+    virtual void ReadRegion(size_t aOffset, size_t aSize, uint8_t *aData) noexcept = 0;
+    virtual void WriteRegion(size_t aOffset, size_t aSize, uint8_t *aData) noexcept = 0;
+    size_t GetSize() { return mSize; }
+    virtual ~ExternalMemory() {}
+
  private:
+    const size_t mSize;
 };
 
-class ExternalMemoryMap {};
+template <typename T>
+class ExternalMemoryObject {
+ public:
+    constexpr ExternalMemoryObject(ExternalMemory &aMemory, size_t aOffset, T aDefault, T aMin = std::numeric_limits<T>::lowest(),
+                                   T aMax = std::numeric_limits<T>::max())
+        : mMemory{aMemory}, mOffset{aOffset}, mDefault{aDefault}, mMin{aMin}, mMax{aMax} {}
+    virtual void Write(T &aObject) { mMemory.WriteRegion(mOffset, sizeof(T), reinterpret_cast<uint8_t *>(&aObject)); }
+    virtual void Write(T &&aObject) { mMemory.WriteRegion(mOffset, sizeof(T), reinterpret_cast<uint8_t *>(&aObject)); }
+    T Read() {
+        T ret;
+        mMemory.ReadRegion(mOffset, sizeof(T), reinterpret_cast<uint8_t *>(&ret));
+        if (ret < mMin) {
+            ret = mDefault;
+            ExternalMemoryObject::Write(mDefault);
+        } else if (ret > mMax) {
+            ret = mDefault;
+            ExternalMemoryObject::Write(mDefault);
+        }
 
-class ExternalMemory {};
+        return ret;
+    }
+
+    constexpr size_t GetSize() { return sizeof(T); }
+
+    ExternalMemoryObject &operator++() noexcept {
+        auto val = Read();
+        ++val;
+        Write(val);
+        return *this;
+    }
+
+    ExternalMemoryObject &operator--() noexcept {
+        auto val = Read();
+        --val;
+        Write(val);
+        return *this;
+    }
+
+    ExternalMemoryObject &operator++(int)noexcept {
+        auto val = Read();
+        val++;
+        Write(val);
+        return *this;
+    }
+
+    ExternalMemoryObject &operator--(int)noexcept {
+        auto val = Read();
+        val--;
+        Write(val);
+        return *this;
+    }
+
+    operator T() { return Read(); }
+    virtual ~ExternalMemoryObject() {}
+
+ private:
+    ExternalMemory &mMemory;
+    const size_t mOffset;
+    T mDefault;
+    T mMin;
+    T mMax;
+};
+
+template <typename T>
+class WatchedExternalMemoryObject : public ExternalMemoryObject<T> {
+ public:
+    WatchedExternalMemoryObject(ExternalMemory &aMemory, size_t aOffset, T aDefault, T aMin = std::numeric_limits<T>::lowest(),
+                                T aMax = std::numeric_limits<T>::max())
+        : ExternalMemoryObject<T>{aMemory, aOffset, aDefault, aMin, aMax} {}
+    virtual void Write(T &aObject) override {
+        ExternalMemoryObject<T>::Write(aObject);
+        WorkQueue::workQueue.Add({Updated});
+    }
+    virtual void Write(T &&aObject) override {
+        ExternalMemoryObject<T>::Write(aObject);
+        WorkQueue::workQueue.Add({Updated});
+    }
+
+    microhal::Signal<WorkRequestArg &> Updated;
+};
+
+class ExternalMemoryMap {
+ public:
+    ExternalMemoryMap(ExternalMemory &aMemory) : mMemory{aMemory}, mUsedSize{0} {}
+
+    template <typename T>
+    ExternalMemoryObject<T> CreateObject() {
+        size_t location = mUsedSize;
+        mUsedSize += sizeof(T);
+        assert(mUsedSize <= mMemory.GetSize());
+        return ExternalMemoryObject<T>{mMemory, location};
+    }
+
+    template <typename T>
+    WatchedExternalMemoryObject<T> CreateWatchedObject(T aDefault, T aMin = std::numeric_limits<T>::lowest(),
+                                                       T aMax = std::numeric_limits<T>::max()) {
+        size_t location = mUsedSize;
+        mUsedSize += sizeof(T);
+        assert(mUsedSize <= mMemory.GetSize());
+        return WatchedExternalMemoryObject<T>{mMemory, location, aDefault, aMin, aMax};
+    }
+
+ private:
+    ExternalMemory &mMemory;
+    size_t mUsedSize;
+};
 
 #endif  // _MICROHAL_MEMORY_H_

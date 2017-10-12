@@ -75,18 +75,24 @@ class Channels {
     };
 
     friend constexpr Channel& operator++(Channel& aChannel) noexcept {
-        if (aChannel < (Channel::END - 1)) aChannel++;
+        if (aChannel < (Channel::END - 1)) aChannel = (Channel)((uint8_t)(aChannel) + 1);
         return aChannel;
     }
 
     friend constexpr Channel& operator--(Channel& aChannel) noexcept {
-        if (aChannel > Channel::START) aChannel--;
+        if (aChannel > Channel::START) aChannel = (Channel)((uint8_t)(aChannel)-1);
         return aChannel;
     }
 
-    friend constexpr Channel& operator++(Channel& aChannel, int)noexcept { return ++aChannel; }
+    friend constexpr Channel operator++(Channel& aChannel, int)noexcept {
+        if (aChannel < (Channel::END - 1)) aChannel = (Channel)((uint8_t)(aChannel) + 1);
+        return (Channel)((uint8_t)(aChannel)-1);
+    }
 
-    friend constexpr Channel& operator--(Channel& aChannel, int)noexcept { return --aChannel; }
+    friend constexpr Channel operator--(Channel& aChannel, int)noexcept {
+        if (aChannel > Channel::START) aChannel = (Channel)((uint8_t)(aChannel)-1);
+        return (Channel)((uint8_t)(aChannel) + 1);
+    }
 
     static const Descriptor& GetByChannel(Channels::Channel aChannel) noexcept {
         return *std::find_if(mChannels.cbegin(), mChannels.cend(),
@@ -140,5 +146,15 @@ class RX5808 : private microhal::SPIDevice {
         Write(transaction);
     }
 };
+
+namespace std {
+template <>
+class numeric_limits<Channels::Channel> {
+ public:
+    static Channels::Channel lowest() { return Channels::START; };
+    static Channels::Channel min() { return Channels::START; };
+    static Channels::Channel max() { return static_cast<Channels::Channel>(Channels::END - 1); };
+};
+}
 
 #endif  // _MICROHAL_RX5808_H_

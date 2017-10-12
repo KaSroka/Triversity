@@ -75,6 +75,7 @@ class Widget {
     virtual void HandleButtonEvent(const ButtonEvent& aEvent) noexcept {}
     virtual void HandleSizeChange() noexcept {}
     virtual void Reset() noexcept {}
+    virtual void Enable(bool aEnable) noexcept {}
     void SetVisibility(bool aIsVisible) { mIsVisible = aIsVisible; }
     virtual ~Widget() {}
 

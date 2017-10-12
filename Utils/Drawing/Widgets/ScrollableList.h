@@ -112,8 +112,10 @@ class ScrollableList : public Widget {
     void UpdateArrows() noexcept {
         for (HContainer &element : mElements) {
             element.GetComponent(0).SetVisibility(false);
+            element.GetComponent(1).Enable(false);
         }
         mElements[mSelectedElement].GetComponent(0).SetVisibility(true);
+        mElements[mSelectedElement].GetComponent(1).Enable(true);
     }
 
     void ResetElements() noexcept {

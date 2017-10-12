@@ -43,6 +43,8 @@
 
 using namespace std::literals::chrono_literals;
 
+static volatile UBaseType_t uxHighWaterMarkwm;
+
 void Drawing::WindowManager::ManagerThread(void* arg) noexcept {
     auto& wm = *static_cast<WindowManager*>(arg);
     auto lastRedraw = std::chrono::system_clock::now();
@@ -50,10 +52,12 @@ void Drawing::WindowManager::ManagerThread(void* arg) noexcept {
         if (wm.mWindow != wm.mNewWindow) {
             if (wm.mWindow) wm.mWindow->Reset();
             wm.mWindow = wm.mNewWindow;
+            if (wm.mWindow) wm.mWindow->Reset();
         }
         if (wm.mStatusBar != wm.mNewStatusBar) {
             if (wm.mStatusBar) wm.mStatusBar->Reset();
             wm.mStatusBar = wm.mNewStatusBar;
+            if (wm.mStatusBar) wm.mStatusBar->Reset();
         }
         {
             std::unique_lock<std::mutex> lock{wm.mMutex};
@@ -69,5 +73,7 @@ void Drawing::WindowManager::ManagerThread(void* arg) noexcept {
         }
         std::this_thread::sleep_until(lastRedraw + 20ms);
         lastRedraw = std::chrono::system_clock::now();
+
+        uxHighWaterMarkwm = uxTaskGetStackHighWaterMark(NULL);
     }
 }

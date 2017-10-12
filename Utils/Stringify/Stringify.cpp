@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 14-08-2017
- * last modification: 14-08-2017
+ * created on: 18-09-2017
+ * last modification: 18-09-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -30,28 +30,44 @@
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
-#include "WorkQueue.h"
 
-using namespace microhal;
+#include "Stringify.h"
 
-namespace WorkQueue {
+namespace std {
 
-static volatile UBaseType_t uxHighWaterMarkwq;
-
-void WorkQueue::WorkThread(void* arg) noexcept {
-    QueueHandle_t* queue = static_cast<QueueHandle_t*>(arg);
-    WorkRequest request;
-    uint32_t cnt = 0;
-    while (1) {
-        xQueueReceive(queue, &request, portMAX_DELAY);
-        request.mSignal.emit(request.mArg);
-        cnt++;
-        if (cnt == 1000) {
-            cnt = 0;
-            uxHighWaterMarkwq = uxTaskGetStackHighWaterMark(NULL);
-        }
-    }
+std::string toString(uint8_t aValue) {
+    char buff[4];
+    itoa(aValue, buff, 10);
+    return buff;
 }
 
-WorkQueue workQueue;
+std::string toString(int8_t aValue) {
+    char buff[5];
+    itoa(aValue, buff, 10);
+    return buff;
+}
+
+std::string toString(uint16_t aValue) {
+    char buff[6];
+    itoa(aValue, buff, 10);
+    return buff;
+}
+
+std::string toString(int16_t aValue) {
+    char buff[7];
+    itoa(aValue, buff, 10);
+    return buff;
+}
+
+std::string toString(uint32_t aValue) {
+    char buff[11];
+    itoa(aValue, buff, 10);
+    return buff;
+}
+
+std::string toString(int32_t aValue) {
+    char buff[12];
+    itoa(aValue, buff, 10);
+    return buff;
+}
 }

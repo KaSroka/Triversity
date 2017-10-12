@@ -91,24 +91,26 @@ TSL_ObjectGroup_T MyObjGroup = {
     TSL_STATE_NOT_CHANGED  // Current state
 };
 
+static volatile UBaseType_t uxHighWaterMarktc;
+
 void TouchController::TouchProcess(void *arg) {
     TouchController *touchController = static_cast<TouchController *>(arg);
     while (1) {
         if (touchController->Process() == TSL_STATUS_OK) {
             if (keyOk.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonOk.Click});
+                WorkQueue::workQueue.TryAdd({touchController->buttonOk.Click});
             }
             if (keyUp.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonUp.Click});
+                WorkQueue::workQueue.TryAdd({touchController->buttonUp.Click});
             }
             if (keyDown.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonDown.Click});
+                WorkQueue::workQueue.TryAdd({touchController->buttonDown.Click});
             }
             if (keyLeft.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonLeft.Click});
+                WorkQueue::workQueue.TryAdd({touchController->buttonLeft.Click});
             }
             if (keyRight.IsClicked()) {
-                WorkQueue::workQueue.Add({touchController->buttonRight.Click});
+                WorkQueue::workQueue.TryAdd({touchController->buttonRight.Click});
             }
             //            if (LinRots[0].p_Data->Change && LinRots[0].p_Data->StateId == TSL_STATEID_DETECT) {
             //                detectPosition = LinRots[0].p_Data->Position;
@@ -117,13 +119,14 @@ void TouchController::TouchProcess(void *arg) {
             //                value += LinRots[0].p_Data->Direction ? -1 : 1;
             //            }
         }
+        uxHighWaterMarktc = uxTaskGetStackHighWaterMark(NULL);
     }
 }
 
 TouchController::TouchController() {
     mIntSemaphore = xSemaphoreCreateBinary();
 
-    xTaskCreate(TouchProcess, "TP", 256, this, configMAX_PRIORITIES - 1, nullptr);
+    xTaskCreate(TouchProcess, "TP", configMINIMAL_STACK_SIZE, this, configMAX_PRIORITIES - 1, nullptr);
 }
 
 void TouchController::Init() {

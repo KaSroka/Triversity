@@ -33,8 +33,6 @@
  * INCLUDES
  */
 
-#include "ports/stm32f3xx/device/stm32f3xx.h"
-
 #include "WorkQueue.h"
 
 /* **************************************************************************************************************************************************
@@ -63,62 +61,34 @@ class Analog {
         static constexpr uint32_t AdcRange{1 << AdcResolution};
         static constexpr float RefVoltage{3.3f};
     };
+    struct AdcData {
+        volatile uint16_t mVoltage;
+        std::array<volatile uint16_t, 3> mRSSI;
+    };
     friend void DMA1_Channel1_IRQHandler(void);
     void Update() {
-        mVoltage =
-            mAdcData[3] * Params::RefVoltage / Params::AdcRange * (Params::Voltage::LowerRes + Params::Voltage::UpperRes) / Params::Voltage::LowerRes;
-        for (size_t i = 0; i < 3; i++) {
-            mRSSI[i] =
-                mAdcData[i] * Params::RefVoltage / Params::AdcRange * (Params::RSSI::LowerRes + Params::RSSI::UpperRes) / Params::RSSI::LowerRes;
+        mVoltage = mAdcData.mVoltage * Params::RefVoltage / Params::AdcRange * (Params::Voltage::LowerRes + Params::Voltage::UpperRes) /
+                   Params::Voltage::LowerRes;
+        for (size_t i = 0; i < mAdcData.mRSSI.size(); i++) {
+            mRSSI[i] = mAdcData.mRSSI[i] * Params::RefVoltage / Params::AdcRange * (Params::RSSI::LowerRes + Params::RSSI::UpperRes) /
+                       Params::RSSI::LowerRes;
         }
     }
 
  public:
-    Analog() : mVoltage{0}, mRSSI{0, 0, 0} {
-        RCC->AHBENR |= RCC_AHBENR_DMA1EN;
-        RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
-
-        RCC->CFGR |= RCC_CFGR_ADCPRE_DIV8;
-
-        DMA1_Channel1->CNDTR = 4;
-        DMA1_Channel1->CPAR = (uint32_t)&ADC1->DR;
-        DMA1_Channel1->CMAR = (uint32_t)mAdcData;
-        DMA1_Channel1->CCR |= 0b01 << DMA_CCR_MSIZE_Pos | 0b01 << DMA_CCR_PSIZE_Pos | DMA_CCR_MINC | DMA_CCR_CIRC | DMA_CCR_TCIE | DMA_CCR_EN;
-
-        ADC1->CR1 |= ADC_CR1_SCAN;
-        ADC1->CR2 |= ADC_CR2_EXTTRIG | 0b111 << ADC_CR2_EXTSEL_Pos | ADC_CR2_CONT | ADC_CR2_DMA | ADC_CR2_ADON;
-        ADC1->SQR3 |= 1 << ADC_SQR3_SQ1_Pos | 3 << ADC_SQR3_SQ2_Pos | 4 << ADC_SQR3_SQ3_Pos | 6 << ADC_SQR3_SQ4_Pos;
-        ADC1->SQR1 |= 3 << ADC_SQR1_L_Pos;
-        ADC1->SMPR2 |= 0b111 << ADC_SMPR2_SMP1_Pos | 0b111 << ADC_SMPR2_SMP3_Pos | 0b111 << ADC_SMPR2_SMP4_Pos | 0b111 << ADC_SMPR2_SMP6_Pos;
-        ADC1->CR2 |= ADC_CR2_SWSTART;
-
-        NVIC_SetPriority(DMA1_Channel1_IRQn, 5);
-        NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-    }
-
-    float GetVoltage() { return mVoltage; }
-    float GetRSSI(size_t aChannel) { return mRSSI[aChannel]; }
+    Analog() noexcept;
+    float GetVoltage() const noexcept { return mVoltage; }
+    float GetRSSI(size_t aChannel) const noexcept { return mRSSI[aChannel]; }
 
     microhal::Signal<WorkRequestArg&> RSSIUpdate[3];
     microhal::Signal<WorkRequestArg&> VoltageUpdate;
 
  private:
-    volatile uint16_t mAdcData[4]{0, 0, 0, 0};
-    float mVoltage;
-    float mRSSI[3];
+    AdcData mAdcData{0, {{0, 0, 0}}};
+    float mVoltage{0};
+    std::array<float, 3> mRSSI{{0, 0, 0}};
 };
 
 extern Analog analog;
-
-void DMA1_Channel1_IRQHandler(void) {
-    BaseType_t xHigherPriorityTaskWoken;
-    DMA1->IFCR |= DMA_IFCR_CTCIF1;
-    analog.Update();
-    WorkQueue::workQueue.AddFromISR({analog.VoltageUpdate, analog.GetVoltage()}, xHigherPriorityTaskWoken);
-    for (size_t i = 0; i < 3; i++) {
-        WorkQueue::workQueue.AddFromISR({analog.RSSIUpdate[i], analog.GetRSSI(i)}, xHigherPriorityTaskWoken);
-    }
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
 
 #endif  // _MICROHAL_ADC_H_

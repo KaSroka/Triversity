@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 14-08-2017
- * last modification: 14-08-2017
+ * created on: 01-10-2017
+ * last modification: 01-10-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -30,28 +30,53 @@
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
-#include "WorkQueue.h"
 
-using namespace microhal;
+#include "ports/stm32f3xx/device/stm32f3xx.h"
 
-namespace WorkQueue {
+#include "microhal.h"
 
-static volatile UBaseType_t uxHighWaterMarkwq;
+#include "Analog.h"
 
-void WorkQueue::WorkThread(void* arg) noexcept {
-    QueueHandle_t* queue = static_cast<QueueHandle_t*>(arg);
-    WorkRequest request;
-    uint32_t cnt = 0;
-    while (1) {
-        xQueueReceive(queue, &request, portMAX_DELAY);
-        request.mSignal.emit(request.mArg);
-        cnt++;
-        if (cnt == 1000) {
-            cnt = 0;
-            uxHighWaterMarkwq = uxTaskGetStackHighWaterMark(NULL);
-        }
+static TimerHandle_t ADCTimer;
+
+void StartADC(TimerHandle_t xTimer) {
+    ADC1->CR2 |= ADC_CR2_SWSTART;
+}
+
+Analog::Analog() {
+    RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+    RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+
+    RCC->CFGR |= RCC_CFGR_ADCPRE_DIV8;
+
+    DMA1_Channel1->CNDTR = 4;
+    DMA1_Channel1->CPAR = (uint32_t)&ADC1->DR;
+    DMA1_Channel1->CMAR = (uint32_t)&mAdcData;
+    DMA1_Channel1->CCR |= 0b01 << DMA_CCR_MSIZE_Pos | 0b01 << DMA_CCR_PSIZE_Pos | DMA_CCR_MINC | DMA_CCR_CIRC | DMA_CCR_TCIE | DMA_CCR_EN;
+
+    ADC1->CR1 |= ADC_CR1_SCAN;
+    ADC1->CR2 |= ADC_CR2_EXTTRIG | 0b111 << ADC_CR2_EXTSEL_Pos | ADC_CR2_DMA | ADC_CR2_ADON;
+    ADC1->SQR3 |= 6 << ADC_SQR3_SQ1_Pos | 3 << ADC_SQR3_SQ2_Pos | 1 << ADC_SQR3_SQ3_Pos | 4 << ADC_SQR3_SQ4_Pos;
+    ADC1->SQR1 |= 3 << ADC_SQR1_L_Pos;
+    ADC1->SMPR2 |= 0b111 << ADC_SMPR2_SMP1_Pos | 0b111 << ADC_SMPR2_SMP3_Pos | 0b111 << ADC_SMPR2_SMP4_Pos | 0b111 << ADC_SMPR2_SMP6_Pos;
+
+    NVIC_SetPriority(DMA1_Channel1_IRQn, 5);
+    NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+    ADCTimer = xTimerCreate("ADC", pdMS_TO_TICKS(20), pdTRUE, NULL, StartADC);
+    assert(ADCTimer);
+    xTimerStart(ADCTimer, 0);
+}
+
+void DMA1_Channel1_IRQHandler(void) {
+    BaseType_t xHigherPriorityTaskWoken;
+    DMA1->IFCR |= DMA_IFCR_CTCIF1;
+    analog.Update();
+    WorkQueue::workQueue.AddFromISR({analog.VoltageUpdate, analog.GetVoltage()}, xHigherPriorityTaskWoken);
+    for (size_t i = 0; i < 3; i++) {
+        WorkQueue::workQueue.AddFromISR({analog.RSSIUpdate[i], analog.GetRSSI(i)}, xHigherPriorityTaskWoken);
     }
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-WorkQueue workQueue;
-}
+Analog analog;

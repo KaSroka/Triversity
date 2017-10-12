@@ -36,6 +36,7 @@
 #include <functional>
 
 #include "Drawing.h"
+#include "Stringify.h"
 
 /* **************************************************************************************************************************************************
  * CLASS
@@ -46,18 +47,15 @@ namespace Drawing {
 class Number : public Label {
  public:
     Number(const Font& aFont) : Label{aFont, "0"} {}
-    void SetValue(int32_t aValue) {
-        char buff[50];
-        itoa(aValue, buff, 10);
-        SetText(buff);
-    }
+    void SetValue(int32_t aValue) { SetText(std::toString(aValue)); }
 };
 
 class Range : public Widget {
  private:
  public:
-    Range() : mRange{0} {}
+    Range() : mRange{0}, mSelected{false} {}
     void SetRange(float aRange) { mRange = static_cast<uint8_t>(std::round(aRange * mMaxRange)); }
+    void SetSelected(bool aSelected) { mSelected = aSelected; }
     virtual void Draw(Graphics& aGraphics) noexcept override {
         if (mRange) {
             for (uint8_t x = 0; x < mMaxRange; x++) {
@@ -66,15 +64,23 @@ class Range : public Widget {
                 }
             }
         } else {
-            for (uint8_t x = 1; x < mMaxRange - 1; x++) {
-                aGraphics.SetPixel({x, x}, true);
-                aGraphics.SetPixel({x, mMaxRange - 1 - x - 1}, true);
+            for (uint8_t x = 1; x < mMaxRange - 2; x++) {
+                aGraphics.SetPixel({x + 1, x + 1}, true);
+                aGraphics.SetPixel({x + 1, mMaxRange - 1 - x}, true);
+            }
+        }
+
+        if (mSelected) {
+            aGraphics.SetPixel({mMaxRange / 2, mMaxRange + 1}, true);
+            for (int32_t i = -1; i < 2; i++) {
+                aGraphics.SetPixel({mMaxRange / 2 + i, mMaxRange + 2}, true);
             }
         }
     }
 
  private:
     uint8_t mRange;
+    bool mSelected;
     static constexpr uint8_t mMaxRange{10};
 };
 
@@ -82,18 +88,19 @@ template <typename T>
 class ValueUpDown : public Widget {
  private:
     void UpdateValue() {
-        char buff[50];
-        itoa(mValue, buff, 10);
-        mValueLabel.SetText(buff);
+        mValueLabel.SetText(std::toString(mValue));
+        mDirty = false;
     }
 
  public:
-    ValueUpDown(T& aValue, const std::string& aName = "numeric") : Widget{}, mValue{aValue} {
-        mNameLabel.SetText(aName);
-        mValueLabel.SetText("0");
+    ValueUpDown(T& aValue, const std::string& aName = "numeric") : Widget{}, mValue{aValue} { mNameLabel.SetText(aName); }
+
+    virtual void Draw(Graphics& aGraphics) noexcept override {
+        if (mDirty) UpdateValue();
+        mContainer.Draw(aGraphics);
     }
 
-    virtual void Draw(Graphics& aGraphics) noexcept override { mContainer.Draw(aGraphics); }
+    virtual void Enable(bool aEnable) noexcept override { mContainer.Enable(aEnable); }
 
     virtual const Vector2D& GetRequestedSize() const noexcept override { return mContainer.GetRequestedSize(); }
 
@@ -103,11 +110,11 @@ class ValueUpDown : public Widget {
         switch (aEvent) {
             case ButtonEvent::LEFT:
                 mValue--;
-                UpdateValue();
+                mDirty = true;
                 break;
             case ButtonEvent::RIGHT:
                 mValue++;
-                UpdateValue();
+                mDirty = true;
                 break;
             default:
                 break;
@@ -122,6 +129,7 @@ class ValueUpDown : public Widget {
     Label mValueLabel{Fonts::RobotoLight::pt10};
     HContainer mContainer{{mNameLabel, 0.65f}, {mSpacer, 0.1f}, {mValueLabel, 0.25f}};
     T& mValue;
+    bool mDirty = true;
 };
 
 class Button : public Label {

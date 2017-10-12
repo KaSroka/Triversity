@@ -80,6 +80,10 @@ class Label : public Widget {
                                                                                                                   mScrollPos{0} {
         SetText(aText);
     }
+    virtual void Enable(bool aEnable) noexcept override {
+        mEnabled = aEnable;
+        Reset();
+    }
     void SetFont(const Font& aFont) noexcept { mCurrentFont = &aFont; }
     void SetText(const std::string& aText) noexcept {
         mText = aText;
@@ -88,7 +92,13 @@ class Label : public Widget {
     }
 
     virtual void Draw(Graphics& aGraphics) noexcept override {
-        if (mRequestedSize.GetX() > GetSize().GetX()) {
+        if (mRequestedSize.GetX() > GetSize().GetX() && mEnabled && mScrollHold) {
+            auto timeNow = std::chrono::system_clock::now();
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - mLastPosUpdate).count() > 700) {
+                mScrollHold = false;
+                mLastPosUpdate = timeNow;
+            }
+        } else if (mRequestedSize.GetX() > GetSize().GetX() && mEnabled) {
             auto timeNow = std::chrono::system_clock::now();
             mAccumulatedDelta += std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - mLastPosUpdate).count() / 1000.0f;
             const float speed = 15;
@@ -109,6 +119,7 @@ class Label : public Widget {
         mLastPosUpdate = std::chrono::system_clock::now();
         mScrollPos = 0;
         mAccumulatedDelta = 0;
+        mScrollHold = true;
     }
 
  private:
@@ -118,6 +129,8 @@ class Label : public Widget {
     int32_t mScrollPos;
     std::chrono::system_clock::time_point mLastPosUpdate;
     float mAccumulatedDelta;
+    bool mEnabled = false;
+    bool mScrollHold = true;
 };
 }
 

@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 14-08-2017
- * last modification: 14-08-2017
+ * created on: 18-09-2017
+ * last modification: 18-09-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,31 +27,31 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _MICROHAL_STRINGIFY_H_
+#define _MICROHAL_STRINGIFY_H_
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
-#include "WorkQueue.h"
 
-using namespace microhal;
+#include <string>
 
-namespace WorkQueue {
+#include "MyStringify.h"
 
-static volatile UBaseType_t uxHighWaterMarkwq;
+#include "microhal.h"
 
-void WorkQueue::WorkThread(void* arg) noexcept {
-    QueueHandle_t* queue = static_cast<QueueHandle_t*>(arg);
-    WorkRequest request;
-    uint32_t cnt = 0;
-    while (1) {
-        xQueueReceive(queue, &request, portMAX_DELAY);
-        request.mSignal.emit(request.mArg);
-        cnt++;
-        if (cnt == 1000) {
-            cnt = 0;
-            uxHighWaterMarkwq = uxTaskGetStackHighWaterMark(NULL);
-        }
-    }
+#include "Memory.h"
+
+/* **************************************************************************************************************************************************
+ * CLASS
+ */
+namespace std {
+
+std::string toString(uint8_t aValue);
+std::string toString(int8_t aValue);
+std::string toString(uint16_t aValue);
+std::string toString(int16_t aValue);
+std::string toString(uint32_t aValue);
+std::string toString(int32_t aValue);
 }
 
-WorkQueue workQueue;
-}
+#endif  // _MICROHAL_STRINGIFY_H_

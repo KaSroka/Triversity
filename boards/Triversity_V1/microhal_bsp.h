@@ -4,11 +4,11 @@
  @version    $Id$
  @brief      board support package for stm32f4Discovery board
 
- @authors    Pawel Okas
+ @authors    kamil
  created on: 16-04-2014
  last modification: <DD-MM-YYYY>
 
- @copyright Copyright (c) 2014, microHAL
+ @copyright Copyright (c) 2017, microHAL
  All rights reserved.
  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
  conditions are met:
@@ -25,16 +25,19 @@
  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */ /* ==========================================================================================================================
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   */
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   */
 
-#ifndef STM32F4DISCOVERY_H_
-#define STM32F4DISCOVERY_H_
+#ifndef TRIVERSITY_V1_H_
+#define TRIVERSITY_V1_H_
 
 #include <array>
 
 #include "Drawing.h"
+#include "MB85RC128.h"
+#include "Memory.h"
 #include "RX5808.h"
 #include "TouchController.h"
+#include "VideoSwitch.h"
 
 namespace bsp {
 
@@ -68,11 +71,22 @@ constexpr microhal::GPIO::IOPin EN_RX_OSD(microhal::stm32f3xx::GPIO::PortC, 7);
 constexpr microhal::GPIO::IOPin EN_RX_NO_OSD(microhal::stm32f3xx::GPIO::PortC, 6);
 }
 
+namespace Memory {
+static microhal::I2C &i2c = microhal::stm32f3xx::I2C::i2c2;
+}
+
 constexpr microhal::GPIO::IOPin VibrationMotor(microhal::stm32f3xx::GPIO::PortA, 12);
+}
+
+namespace Config {
+extern WatchedExternalMemoryObject<Channels::Channel> Channel;
 }
 
 extern Drawing::Graphics graphics;
 extern TouchController::TouchController touchController;
 extern std::array<RX5808, 3> videoRxes;
+extern VideoSwitch videoSwitch;
+extern MB85RC128 memory;
+extern ExternalMemoryMap memoryMap;
 
-#endif /* STM32F4DISCOVERY_H_ */
+#endif /* TRIVERSITY_V1_H_ */

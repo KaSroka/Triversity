@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 14-08-2017
- * last modification: 14-08-2017
+ * created on: 17-09-2017
+ * last modification: 17-09-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,31 +27,35 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _MICROHAL_MB85RC128_H_
+#define _MICROHAL_MB85RC128_H_
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
-#include "WorkQueue.h"
+
+#include "I2CDevice/I2CDevice.h"
+#include "microhal.h"
+
+#include "Memory.h"
 
 using namespace microhal;
 
-namespace WorkQueue {
+/* **************************************************************************************************************************************************
+ * CLASS
+ */
 
-static volatile UBaseType_t uxHighWaterMarkwq;
+class MB85RC128 : public ExternalMemory, private I2CDevice {
+ private:
+    enum { I2C_ADDR = 0b10100000, SIZE = 1024 * 16 };
 
-void WorkQueue::WorkThread(void* arg) noexcept {
-    QueueHandle_t* queue = static_cast<QueueHandle_t*>(arg);
-    WorkRequest request;
-    uint32_t cnt = 0;
-    while (1) {
-        xQueueReceive(queue, &request, portMAX_DELAY);
-        request.mSignal.emit(request.mArg);
-        cnt++;
-        if (cnt == 1000) {
-            cnt = 0;
-            uxHighWaterMarkwq = uxTaskGetStackHighWaterMark(NULL);
-        }
+ public:
+    MB85RC128(microhal::I2C &aI2C) : ExternalMemory{SIZE}, I2CDevice{aI2C, I2C_ADDR} {}
+    virtual void ReadRegion(size_t aOffset, size_t aSize, uint8_t *aData) noexcept override {
+        I2CDevice::readRegisters(static_cast<uint16_t>(aOffset), aData, aSize);
     }
-}
+    virtual void WriteRegion(size_t aOffset, size_t aSize, uint8_t *aData) noexcept override {
+        I2CDevice::writeRegisters(static_cast<uint16_t>(aOffset), aData, aSize);
+    }
+};
 
-WorkQueue workQueue;
-}
+#endif  // _MICROHAL_MB85RC128_H_

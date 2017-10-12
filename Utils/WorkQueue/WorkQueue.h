@@ -46,12 +46,12 @@ class WorkQueue {
  public:
     WorkQueue() noexcept {
         mWorkQueue = xQueueCreate(10, sizeof(WorkRequest));
-        xTaskCreate(WorkThread, "WQ", configMINIMAL_STACK_SIZE, mWorkQueue, 0, nullptr);
+        xTaskCreate(WorkThread, "WQ", 256, mWorkQueue, 1, nullptr);
     }
 
     void Add(WorkRequest aRequest) noexcept { xQueueSend(mWorkQueue, &aRequest, portMAX_DELAY); }
 
-    bool TryAdd(WorkRequest aRequest) noexcept { return xQueueSend(mWorkQueue, &aRequest, portMAX_DELAY) == pdTRUE; }
+    bool TryAdd(WorkRequest aRequest) noexcept { return xQueueSend(mWorkQueue, &aRequest, 0) == pdTRUE; }
 
     bool AddFromISR(WorkRequest aRequest, BaseType_t& aHigherPriorityTaskWoken) noexcept {
         return xQueueSendFromISR(mWorkQueue, &aRequest, &aHigherPriorityTaskWoken) == pdTRUE;

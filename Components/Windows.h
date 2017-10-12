@@ -33,7 +33,10 @@
  * INCLUDES
  */
 
+#include <array>
+
 #include "Drawing.h"
+#include "Memory.h"
 
 /* **************************************************************************************************************************************************
  * CLASS
@@ -45,16 +48,21 @@ class StatusBar : public Window {
     StatusBar() : Window{{container}, {{0, 0}, {128, 16}}} { container.SetSize(GetSize()); }
 
     void SetVoltage(float aVoltage) { voltage.SetValue((int32_t)(aVoltage * 10 / 3.0f)); }
-    void SetRSSI(float aRSSI, size_t aChannel) { rssi[aChannel].SetRange((aRSSI * 10 - 1) / 4.0f); }
+    void SetRSSI(float aRSSI, size_t aChannel) { rssi[aChannel].SetRange((aRSSI * 10 - 2.0f) / 3.5f); }
+    void SetSelectedRx(size_t aSelected) {
+        for (size_t i = 0; i < rssi.size(); i++) {
+            rssi[i].SetSelected(i == aSelected);
+        }
+    }
 
  private:
     Number voltage{Fonts::RobotoLight::pt10};
     Label vSign{Fonts::RobotoLight::pt10, "V"};
-    Label rssiNum[3]{{Fonts::RobotoLight::pt10, "1"}, {Fonts::RobotoLight::pt10, "2"}, {Fonts::RobotoLight::pt10, "3"}};
-    Range rssi[3]{};
+    std::array<Label, 3> rssiNum{{{Fonts::RobotoLight::pt10, "1"}, {Fonts::RobotoLight::pt10, "2"}, {Fonts::RobotoLight::pt10, "3"}}};
+    std::array<Range, 3> rssi{};
     EmptyWidget spacer{};
-    HContainer container{{voltage, 1.0f},    {spacer, 0.6f},  {rssiNum[0], 0.3f}, {rssi[0], 0.5f},    {spacer, 0.3f},
-                         {rssiNum[1], 0.3f}, {rssi[1], 0.5f}, {spacer, 0.3f},     {rssiNum[2], 0.3f}, {rssi[2], 0.5f}};
+    HContainer container{{voltage, 1.0f},    {spacer, 0.6f},  {rssiNum[2], 0.3f}, {rssi[2], 0.5f},    {spacer, 0.3f},
+                         {rssiNum[0], 0.3f}, {rssi[0], 0.5f}, {spacer, 0.3f},     {rssiNum[1], 0.3f}, {rssi[1], 0.5f}};
 };
 
 class MainWindow : public Window {
@@ -62,7 +70,8 @@ class MainWindow : public Window {
     void JumpToChild() { windowManager.SetCurrentWindow(mChild); }
 
  public:
-    MainWindow(Window& aChild) : Window{{mList}, {{0, 16}, {128, 48}}}, mChild{&aChild} {
+    MainWindow(Window& aChild, WatchedExternalMemoryObject<Channels::Channel>& aChannel)
+        : Window{{mList}, {{0, 16}, {128, 48}}}, mChild{&aChild}, mChannel{aChannel, "Channel:"} {
         mList.SetSize(GetSize());
         mChildButton.CallbackFunction.connect(mSubMenu, *this);
     }
@@ -82,16 +91,10 @@ class MainWindow : public Window {
 
  private:
     Window* mChild;
-    int32_t value{0};
-    ValueUpDown<int32_t> mWidget1{value, "Value 1"};
-    ValueUpDown<int32_t> mWidget2{value, "Value 2"};
-    ValueUpDown<int32_t> mWidget3{value, "Value 3"};
-    ValueUpDown<int32_t> mWidget4{value, "Value 4"};
-    ValueUpDown<int32_t> mWidget5{value, "Value 5"};
-    ValueUpDown<int32_t> mWidget6{value, "Value 6"};
+    ValueUpDown<WatchedExternalMemoryObject<Channels::Channel>> mChannel;
     Button mChildButton{"Sub menu"};
     microhal::Slot_0<MainWindow, &MainWindow::JumpToChild> mSubMenu{};
-    ScrollableList mList{mWidget1, mWidget2, mWidget3, mWidget4, mWidget5, mWidget6, mChildButton};
+    ScrollableList mList{mChannel, mChildButton};
 };
 
 class SubWindow : public Window {
