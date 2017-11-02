@@ -36,7 +36,7 @@
 
 #include "WorkQueue.h"
 
-namespace TouchController {
+namespace TouchLib {
 
 #define channel(chann) \
     TSL_ChannelSrc_T { chann##_SRC, chann##_IO_MSK, chann##_GRP_MSK }

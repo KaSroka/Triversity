@@ -34,8 +34,7 @@
 #include "ports/stm32f3xx/device/stm32f3xx.h"
 
 #include "microhal.h"
-
-#include "Analog.h"
+#include "microhal_bsp.h"
 
 static TimerHandle_t ADCTimer;
 
@@ -44,6 +43,8 @@ void StartADC(TimerHandle_t xTimer) {
 }
 
 Analog::Analog() {
+    mUpdate.connect(mUpdateSlot, *this);
+
     RCC->AHBENR |= RCC_AHBENR_DMA1EN;
     RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 
@@ -71,12 +72,6 @@ Analog::Analog() {
 void DMA1_Channel1_IRQHandler(void) {
     BaseType_t xHigherPriorityTaskWoken;
     DMA1->IFCR |= DMA_IFCR_CTCIF1;
-    analog.Update();
-    WorkQueue::workQueue.AddFromISR({analog.VoltageUpdate, analog.GetVoltage()}, xHigherPriorityTaskWoken);
-    for (size_t i = 0; i < 3; i++) {
-        WorkQueue::workQueue.AddFromISR({analog.RSSIUpdate[i], analog.GetRSSI(i)}, xHigherPriorityTaskWoken);
-    }
+    WorkQueue::workQueue.AddFromISR({analog.mUpdate}, xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-
-Analog analog;

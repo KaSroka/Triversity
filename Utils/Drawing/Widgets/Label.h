@@ -43,6 +43,8 @@
  * CLASS
  */
 
+using namespace std::chrono_literals;
+
 namespace Drawing {
 
 class Label : public Widget {
@@ -94,16 +96,15 @@ class Label : public Widget {
     virtual void Draw(Graphics& aGraphics) noexcept override {
         if (mRequestedSize.GetX() > GetSize().GetX() && mEnabled && mScrollHold) {
             auto timeNow = std::chrono::system_clock::now();
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - mLastPosUpdate).count() > 700) {
+            if ((timeNow - mLastPosUpdate) > mHoldTime) {
                 mScrollHold = false;
                 mLastPosUpdate = timeNow;
             }
         } else if (mRequestedSize.GetX() > GetSize().GetX() && mEnabled) {
             auto timeNow = std::chrono::system_clock::now();
             mAccumulatedDelta += std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - mLastPosUpdate).count() / 1000.0f;
-            const float speed = 15;
-            float offset = speed * mAccumulatedDelta;
-            mAccumulatedDelta = (offset - std::floor(offset)) / speed;
+            float offset = mSpeed * mAccumulatedDelta;
+            mAccumulatedDelta = (offset - std::floor(offset)) / mSpeed;
             mScrollPos = (mScrollPos + static_cast<int32_t>(std::floor(offset))) % (mRequestedSize.GetX() + 25);
             mLastPosUpdate = timeNow;
 
@@ -129,8 +130,10 @@ class Label : public Widget {
     int32_t mScrollPos;
     std::chrono::system_clock::time_point mLastPosUpdate;
     float mAccumulatedDelta;
-    bool mEnabled = false;
-    bool mScrollHold = true;
+    bool mEnabled{false};
+    bool mScrollHold{true};
+    static constexpr float mSpeed{15.0f};
+    static constexpr auto mHoldTime{700ms};
 };
 }
 

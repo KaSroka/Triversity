@@ -24,7 +24,7 @@ using namespace std::literals::chrono_literals;
 
 using namespace Drawing;
 using namespace WorkQueue;
-using namespace TouchController;
+using namespace TouchLib;
 
 class Haptic {
  private:
@@ -45,8 +45,6 @@ static Haptic haptic{bsp::VibrationMotor};
 static StatusBar statusBar{};
 static SubWindow subWindow{};
 static MainWindow window{subWindow, Config::Channel};
-
-static volatile UBaseType_t uxHighWaterMark;
 
 static void UpdateRxChannel() {
     for (auto& videoRx : videoRxes) {
@@ -88,8 +86,6 @@ int main(void) {
         statusBar.SetSelectedRx(2);
 
         std::this_thread::sleep_for(5s);
-
-        uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     }
 }
 

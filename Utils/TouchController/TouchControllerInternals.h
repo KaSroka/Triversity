@@ -39,7 +39,7 @@
  * CLASS
  */
 
-namespace TouchController {
+namespace TouchLib {
 
 namespace Internals {
 

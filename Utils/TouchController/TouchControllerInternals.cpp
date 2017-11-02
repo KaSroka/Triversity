@@ -44,16 +44,16 @@ TSL_Params_T TSL_Params = {
     TSLPRM_CALIB_SAMPLES,
     TSLPRM_DTO,
 #if TSLPRM_TOTAL_TKEYS > 0
-    TouchController::Internals::TKeys_StateMachine,  // Default state machine for TKeys
-    &TouchController::Internals::TKeys_Methods,      // Default methods for TKeys
+    TouchLib::Internals::TKeys_StateMachine,  // Default state machine for TKeys
+    &TouchLib::Internals::TKeys_Methods,      // Default methods for TKeys
 #endif
 #if TSLPRM_TOTAL_LNRTS > 0
-    TouchController::Internals::LinRots_StateMachine,  // Default state machine for LinRots
-    &TouchController::Internals::LinRots_Methods       // Default methods for LinRots
+    TouchLib::Internals::LinRots_StateMachine,  // Default state machine for LinRots
+    &TouchLib::Internals::LinRots_Methods       // Default methods for LinRots
 #endif
 };
 
-namespace TouchController {
+namespace TouchLib {
 
 namespace Internals {
 static void ErrorStateProcess(void) {}

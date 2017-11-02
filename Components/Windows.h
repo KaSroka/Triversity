@@ -48,7 +48,7 @@ class StatusBar : public Window {
     StatusBar() : Window{{container}, {{0, 0}, {128, 16}}} { container.SetSize(GetSize()); }
 
     void SetVoltage(float aVoltage) { voltage.SetValue((int32_t)(aVoltage * 10 / 3.0f)); }
-    void SetRSSI(float aRSSI, size_t aChannel) { rssi[aChannel].SetRange((aRSSI * 10 - 2.0f) / 3.5f); }
+    void SetRSSI(float aRSSI, size_t aChannel) { rssi[aChannel].SetRange(aRSSI); }
     void SetSelectedRx(size_t aSelected) {
         for (size_t i = 0; i < rssi.size(); i++) {
             rssi[i].SetSelected(i == aSelected);

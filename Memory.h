@@ -51,7 +51,7 @@ class ExternalMemory {
  public:
     ExternalMemory(size_t aSize) : mSize{aSize} {}
     virtual void ReadRegion(size_t aOffset, size_t aSize, uint8_t *aData) noexcept = 0;
-    virtual void WriteRegion(size_t aOffset, size_t aSize, uint8_t *aData) noexcept = 0;
+    virtual void WriteRegion(size_t aOffset, size_t aSize, const uint8_t *aData) noexcept = 0;
     size_t GetSize() { return mSize; }
     virtual ~ExternalMemory() {}
 
@@ -65,8 +65,8 @@ class ExternalMemoryObject {
     constexpr ExternalMemoryObject(ExternalMemory &aMemory, size_t aOffset, T aDefault, T aMin = std::numeric_limits<T>::lowest(),
                                    T aMax = std::numeric_limits<T>::max())
         : mMemory{aMemory}, mOffset{aOffset}, mDefault{aDefault}, mMin{aMin}, mMax{aMax} {}
-    virtual void Write(T &aObject) { mMemory.WriteRegion(mOffset, sizeof(T), reinterpret_cast<uint8_t *>(&aObject)); }
-    virtual void Write(T &&aObject) { mMemory.WriteRegion(mOffset, sizeof(T), reinterpret_cast<uint8_t *>(&aObject)); }
+    virtual void Write(const T &aObject) { mMemory.WriteRegion(mOffset, sizeof(T), reinterpret_cast<const uint8_t *>(&aObject)); }
+    virtual void Write(const T &&aObject) { mMemory.WriteRegion(mOffset, sizeof(T), reinterpret_cast<const uint8_t *>(&aObject)); }
     T Read() {
         T ret;
         mMemory.ReadRegion(mOffset, sizeof(T), reinterpret_cast<uint8_t *>(&ret));
@@ -111,6 +111,16 @@ class ExternalMemoryObject {
         return *this;
     }
 
+    ExternalMemoryObject &operator=(const T &aVal) noexcept {
+        Write(aVal);
+        return *this;
+    }
+
+    ExternalMemoryObject &operator=(const T &&aVal) noexcept {
+        Write(aVal);
+        return *this;
+    }
+
     operator T() { return Read(); }
     virtual ~ExternalMemoryObject() {}
 
@@ -128,11 +138,11 @@ class WatchedExternalMemoryObject : public ExternalMemoryObject<T> {
     WatchedExternalMemoryObject(ExternalMemory &aMemory, size_t aOffset, T aDefault, T aMin = std::numeric_limits<T>::lowest(),
                                 T aMax = std::numeric_limits<T>::max())
         : ExternalMemoryObject<T>{aMemory, aOffset, aDefault, aMin, aMax} {}
-    virtual void Write(T &aObject) override {
+    virtual void Write(const T &aObject) override {
         ExternalMemoryObject<T>::Write(aObject);
         WorkQueue::workQueue.Add({Updated});
     }
-    virtual void Write(T &&aObject) override {
+    virtual void Write(const T &&aObject) override {
         ExternalMemoryObject<T>::Write(aObject);
         WorkQueue::workQueue.Add({Updated});
     }
@@ -145,11 +155,11 @@ class ExternalMemoryMap {
     ExternalMemoryMap(ExternalMemory &aMemory) : mMemory{aMemory}, mUsedSize{0} {}
 
     template <typename T>
-    ExternalMemoryObject<T> CreateObject() {
+    ExternalMemoryObject<T> CreateObject(T aDefault, T aMin = std::numeric_limits<T>::lowest(), T aMax = std::numeric_limits<T>::max()) {
         size_t location = mUsedSize;
         mUsedSize += sizeof(T);
         assert(mUsedSize <= mMemory.GetSize());
-        return ExternalMemoryObject<T>{mMemory, location};
+        return ExternalMemoryObject<T>{mMemory, location, aDefault, aMin, aMax};
     }
 
     template <typename T>

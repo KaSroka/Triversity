@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 17-09-2017
- * last modification: 17-09-2017
+ * created on: 28-10-2017
+ * last modification: 28-10-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,35 +27,44 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_MB85RC128_H_
-#define _MICROHAL_MB85RC128_H_
+#ifndef _MICROHAL_SWITCHINGALGORITHM_H_
+#define _MICROHAL_SWITCHINGALGORITHM_H_
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
 
-#include "I2CDevice/I2CDevice.h"
+#include <chrono>
+
 #include "microhal.h"
 
-#include "Memory.h"
-
-using namespace microhal;
+#include "VideoSwitch.h"
 
 /* **************************************************************************************************************************************************
  * CLASS
  */
 
-class MB85RC128 : public ExternalMemory, private I2CDevice {
+template <size_t rxn>
+class SwitchingAlgorithm {
  private:
-    enum { I2C_ADDR = 0b10100000, SIZE = 1024 * 16 };
-
  public:
-    MB85RC128(microhal::I2C &aI2C) : ExternalMemory{SIZE}, I2CDevice{aI2C, I2C_ADDR} {}
-    virtual void ReadRegion(size_t aOffset, size_t aSize, uint8_t *aData) noexcept override {
-        I2CDevice::readRegisters(static_cast<uint16_t>(aOffset), aData, aSize);
+    void Update(std::array<float, rxn> &aRSSI) {
+        auto max = std::max_element(aRSSI.begin(), aRSSI.end());
+        auto maxIdx = std::distance(aRSSI.begin(), max);
+        auto timeNow = std::chrono::system_clock::now();
+
+        if (maxIdx != mCurrentSwitch && ((*max - aRSSI[mCurrentSwitch]) > mCriticalTreshold ||
+                                         std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - mLastSwitchTime).count() > 700)) {
+            mLastSwitchTime = timeNow;
+            // Switch to max_idx
+        }
     }
-    virtual void WriteRegion(size_t aOffset, size_t aSize, const uint8_t *aData) noexcept override {
-        I2CDevice::writeRegisters(static_cast<uint16_t>(aOffset), aData, aSize);
-    }
+
+ private:
+    VideoSwitch &mSwitch;
+    std::chrono::system_clock::time_point mLastSwitchTime;
+    float mCriticalTreshold{0.2f};
+    std::chrono::duration mSwitchTimeout{1s};
+    size_t mCurrentSwitch{0};
 };
 
-#endif  // _MICROHAL_MB85RC128_H_
+#endif  // _MICROHAL_SWITCHINGALGORITHM_H_

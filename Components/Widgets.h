@@ -54,13 +54,14 @@ class Range : public Widget {
  private:
  public:
     Range() : mRange{0}, mSelected{false} {}
-    void SetRange(float aRange) { mRange = static_cast<uint8_t>(std::round(aRange * mMaxRange)); }
+    void SetRange(float aRange) { mRange = static_cast<uint8_t>(std::round(aRange * (mMaxRange + mDeadZone))); }
     void SetSelected(bool aSelected) { mSelected = aSelected; }
     virtual void Draw(Graphics& aGraphics) noexcept override {
-        if (mRange) {
+        if (mRange >= mDeadZone) {
+            float range = mRange - mDeadZone;
             for (uint8_t x = 0; x < mMaxRange; x++) {
                 for (uint8_t y = 0; y < mMaxRange; y++) {
-                    if (x < mRange && y < x) aGraphics.SetPixel({x, mMaxRange - y - 1}, true);
+                    if (x < range && y < x) aGraphics.SetPixel({x, mMaxRange - y - 1}, true);
                 }
             }
         } else {
@@ -82,6 +83,7 @@ class Range : public Widget {
     uint8_t mRange;
     bool mSelected;
     static constexpr uint8_t mMaxRange{10};
+    static constexpr uint8_t mDeadZone{4};
 };
 
 template <typename T>

@@ -42,7 +42,7 @@
  * CLASS
  */
 
-namespace TouchController {
+namespace TouchLib {
 
 #define ROT_1_UP_IO_MSK (TSL_GROUP2_IO2)
 #define ROT_1_UP_GRP_MSK (TSL_GROUP2)
