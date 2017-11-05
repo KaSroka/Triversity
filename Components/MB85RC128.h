@@ -44,6 +44,8 @@ using namespace microhal;
  * CLASS
  */
 
+namespace Memory {
+
 class MB85RC128 : public ExternalMemory, private I2CDevice {
  private:
     enum { I2C_ADDR = 0b10100000, SIZE = 1024 * 16 };
@@ -57,5 +59,6 @@ class MB85RC128 : public ExternalMemory, private I2CDevice {
         I2CDevice::writeRegisters(static_cast<uint16_t>(aOffset), aData, aSize);
     }
 };
+}
 
 #endif  // _MICROHAL_MB85RC128_H_

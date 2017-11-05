@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 14-08-2017
- * last modification: 14-08-2017
+ * created on: 05-11-2017
+ * last modification: 05-11-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,38 +27,20 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_WORKQUEUET_H_
-#define _MICROHAL_WORKQUEUET_H_
-
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
 
-#include "microhal.h"
+#include "Windows.h"
 
-#include "WorkRequest.h"
+#include "Instance.h"
 
-using namespace microhal;
+namespace Drawing {
+void MainWindow::JumpToChild() {
+    Instance::GetWindowManager().SetCurrentWindow(mChild);
+}
 
-class WorkQueue {
- public:
-    WorkQueue() noexcept {
-        mWorkQueue = xQueueCreate(10, sizeof(WorkRequest));
-        xTaskCreate(WorkThread, "WQ", 256, mWorkQueue, 1, nullptr);
-    }
-
-    void Add(WorkRequest aRequest) noexcept { xQueueSend(mWorkQueue, &aRequest, portMAX_DELAY); }
-
-    bool TryAdd(WorkRequest aRequest) noexcept { return xQueueSend(mWorkQueue, &aRequest, 0) == pdTRUE; }
-
-    bool AddFromISR(WorkRequest aRequest, BaseType_t& aHigherPriorityTaskWoken) noexcept {
-        return xQueueSendFromISR(mWorkQueue, &aRequest, &aHigherPriorityTaskWoken) == pdTRUE;
-    }
-
- private:
-    static void WorkThread(void* arg) noexcept;
-
-    QueueHandle_t mWorkQueue;
-};
-
-#endif  // _MICROHAL_WORKQUEUET_H_
+void SubWindow::Exit() {
+    Instance::GetWindowManager().SetCurrentWindow(mParent);
+}
+}

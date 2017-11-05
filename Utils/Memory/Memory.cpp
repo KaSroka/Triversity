@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 14-08-2017
- * last modification: 14-08-2017
+ * created on: 04-11-2017
+ * last modification: 04-11-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,38 +27,28 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_WORKQUEUET_H_
-#define _MICROHAL_WORKQUEUET_H_
-
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
 
-#include "microhal.h"
+#include "Memory.h"
 
-#include "WorkRequest.h"
+#include "Instance.h"
 
-using namespace microhal;
+namespace Memory {
 
-class WorkQueue {
- public:
-    WorkQueue() noexcept {
-        mWorkQueue = xQueueCreate(10, sizeof(WorkRequest));
-        xTaskCreate(WorkThread, "WQ", 256, mWorkQueue, 1, nullptr);
-    }
+template <typename T>
+void WatchedExternalMemoryObject<T>::Write(const T &aObject) {
+    ExternalMemoryObject<T>::Write(aObject);
+    Instance::GetWorkQueue().Add({Updated});
+}
 
-    void Add(WorkRequest aRequest) noexcept { xQueueSend(mWorkQueue, &aRequest, portMAX_DELAY); }
+template <typename T>
+void WatchedExternalMemoryObject<T>::Write(const T &&aObject) {
+    ExternalMemoryObject<T>::Write(aObject);
+    Instance::GetWorkQueue().Add({Updated});
+}
 
-    bool TryAdd(WorkRequest aRequest) noexcept { return xQueueSend(mWorkQueue, &aRequest, 0) == pdTRUE; }
-
-    bool AddFromISR(WorkRequest aRequest, BaseType_t& aHigherPriorityTaskWoken) noexcept {
-        return xQueueSendFromISR(mWorkQueue, &aRequest, &aHigherPriorityTaskWoken) == pdTRUE;
-    }
-
- private:
-    static void WorkThread(void* arg) noexcept;
-
-    QueueHandle_t mWorkQueue;
-};
-
-#endif  // _MICROHAL_WORKQUEUET_H_
+// Template class member definition in cpp file workaround
+template class WatchedExternalMemoryObject<int>;
+}

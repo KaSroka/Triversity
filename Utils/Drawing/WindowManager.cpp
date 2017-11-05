@@ -34,8 +34,7 @@
 #include <chrono>
 #include <thread>
 
-#include "microhal.h"
-#include "microhal_bsp.h"
+#include "Instance.h"
 
 #include "DrawCall.h"
 #include "Graphics.h"
@@ -61,14 +60,14 @@ void Drawing::WindowManager::ManagerThread(void* arg) noexcept {
         }
         {
             std::unique_lock<std::mutex> lock{wm.mMutex};
-            DrawCall drawCall{graphics};
-            graphics.Fill(false);
+            DrawCall drawCall{Instance::GetGraphics()};
+            Instance::GetGraphics().Fill(false);
 
             if (wm.mStatusBar) {
-                wm.mStatusBar->Draw(graphics.CreateView(wm.mStatusBar->GetDrawingRectangle()));
+                wm.mStatusBar->Draw(Instance::GetGraphics().CreateView(wm.mStatusBar->GetDrawingRectangle()));
             }
             if (wm.mWindow) {
-                wm.mWindow->Draw(graphics.CreateView(wm.mWindow->GetDrawingRectangle()));
+                wm.mWindow->Draw(Instance::GetGraphics().CreateView(wm.mWindow->GetDrawingRectangle()));
             }
         }
         std::this_thread::sleep_until(lastRedraw + 20ms);

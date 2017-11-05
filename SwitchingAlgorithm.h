@@ -27,44 +27,38 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_SWITCHINGALGORITHM_H_
-#define _MICROHAL_SWITCHINGALGORITHM_H_
+#ifndef _SWITCHINGALGORITHM_H_
+#define _SWITCHINGALGORITHM_H_
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
 
+#include <algorithm>
 #include <chrono>
+#include <valarray>
 
 #include "microhal.h"
 
-#include "VideoSwitch.h"
+#include "WorkRequest.h"
 
 /* **************************************************************************************************************************************************
  * CLASS
  */
 
-template <size_t rxn>
+using namespace std::chrono_literals;
+
 class SwitchingAlgorithm {
  private:
  public:
-    void Update(std::array<float, rxn> &aRSSI) {
-        auto max = std::max_element(aRSSI.begin(), aRSSI.end());
-        auto maxIdx = std::distance(aRSSI.begin(), max);
-        auto timeNow = std::chrono::system_clock::now();
+    SwitchingAlgorithm() {}
+    void Update(std::valarray<float> aRSSI) noexcept;
 
-        if (maxIdx != mCurrentSwitch && ((*max - aRSSI[mCurrentSwitch]) > mCriticalTreshold ||
-                                         std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - mLastSwitchTime).count() > 700)) {
-            mLastSwitchTime = timeNow;
-            // Switch to max_idx
-        }
-    }
+    microhal::Signal<WorkRequestArg &> UpdateChannel;
 
  private:
-    VideoSwitch &mSwitch;
     std::chrono::system_clock::time_point mLastSwitchTime;
-    float mCriticalTreshold{0.2f};
-    std::chrono::duration mSwitchTimeout{1s};
+    float mCriticalTreshold{0.1f};
     size_t mCurrentSwitch{0};
 };
 
-#endif  // _MICROHAL_SWITCHINGALGORITHM_H_
+#endif  // _SWITCHINGALGORITHM_H_

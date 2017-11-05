@@ -36,10 +36,13 @@
 #include "microhal.h"
 
 union WorkRequestArg {
-    float RSSI1;
-    float RSSI2;
-    float RSSI3;
+    struct {
+        float RSSI1;
+        float RSSI2;
+        float RSSI3;
+    };
     float Voltage;
+    size_t Channel;
 };
 
 struct WorkRequest {

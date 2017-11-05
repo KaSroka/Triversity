@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 14-08-2017
- * last modification: 14-08-2017
+ * created on: 05-11-2017
+ * last modification: 05-11-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,38 +27,25 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_WORKQUEUET_H_
-#define _MICROHAL_WORKQUEUET_H_
-
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
 
-#include "microhal.h"
+#include "SwitchingAlgorithm.h"
 
-#include "WorkRequest.h"
+#include <chrono>
 
-using namespace microhal;
+#include "Instance.h"
 
-class WorkQueue {
- public:
-    WorkQueue() noexcept {
-        mWorkQueue = xQueueCreate(10, sizeof(WorkRequest));
-        xTaskCreate(WorkThread, "WQ", 256, mWorkQueue, 1, nullptr);
+void SwitchingAlgorithm::Update(std::valarray<float> aRSSI) {
+    aRSSI = 1.0f - std::pow(1.0f - aRSSI, 3);  // Steep response for small rssi values
+    auto max = std::max_element(std::begin(aRSSI), std::end(aRSSI));
+    auto maxIdx = std::distance(std::begin(aRSSI), max);
+    auto timeNow = std::chrono::system_clock::now();
+
+    if (maxIdx != mCurrentSwitch && ((*max - aRSSI[mCurrentSwitch]) > mCriticalTreshold || (timeNow - mLastSwitchTime) > 1s)) {
+        mLastSwitchTime = timeNow;
+        mCurrentSwitch = maxIdx;
+        Instance::GetWorkQueue().Add({UpdateChannel, WorkRequestArg{.Channel = mCurrentSwitch}});
     }
-
-    void Add(WorkRequest aRequest) noexcept { xQueueSend(mWorkQueue, &aRequest, portMAX_DELAY); }
-
-    bool TryAdd(WorkRequest aRequest) noexcept { return xQueueSend(mWorkQueue, &aRequest, 0) == pdTRUE; }
-
-    bool AddFromISR(WorkRequest aRequest, BaseType_t& aHigherPriorityTaskWoken) noexcept {
-        return xQueueSendFromISR(mWorkQueue, &aRequest, &aHigherPriorityTaskWoken) == pdTRUE;
-    }
-
- private:
-    static void WorkThread(void* arg) noexcept;
-
-    QueueHandle_t mWorkQueue;
-};
-
-#endif  // _MICROHAL_WORKQUEUET_H_
+}

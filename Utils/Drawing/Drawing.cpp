@@ -51,12 +51,9 @@ void Graphics::PutC(const Point& aPoint, const Font::Character& aChar) noexcept 
         for (int32_t x = 0; x < aChar.mWidth; x++) {
             uint8_t bitmap = aChar.mBitmap[x + y_byte * aChar.mWidth];
             for (int32_t y = 0; y < std::min(8L, (aChar.mHeight - (y_byte << 3))); y++) {
-                // SetPixelRaw(translation + Point{x, y + (y_byte << 3)}, static_cast<bool>(bitmap & (1 << y)));
                 SetPixel(aPoint + Point{x, y + (y_byte << 3)}, static_cast<bool>(bitmap & (1 << y)));
             }
         }
     }
 }
-
-WindowManager windowManager{};
 }

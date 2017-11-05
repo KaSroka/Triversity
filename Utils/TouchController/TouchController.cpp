@@ -34,7 +34,7 @@
 #include "TouchController.h"
 #include "TouchControllerInternals.h"
 
-#include "WorkQueue.h"
+#include "Instance.h"
 
 namespace TouchLib {
 
@@ -98,19 +98,19 @@ void TouchController::TouchProcess(void *arg) {
     while (1) {
         if (touchController->Process() == TSL_STATUS_OK) {
             if (keyOk.IsClicked()) {
-                WorkQueue::workQueue.TryAdd({touchController->buttonOk.Click});
+                Instance::GetWorkQueue().TryAdd({touchController->buttonOk.Click});
             }
             if (keyUp.IsClicked()) {
-                WorkQueue::workQueue.TryAdd({touchController->buttonUp.Click});
+                Instance::GetWorkQueue().TryAdd({touchController->buttonUp.Click});
             }
             if (keyDown.IsClicked()) {
-                WorkQueue::workQueue.TryAdd({touchController->buttonDown.Click});
+                Instance::GetWorkQueue().TryAdd({touchController->buttonDown.Click});
             }
             if (keyLeft.IsClicked()) {
-                WorkQueue::workQueue.TryAdd({touchController->buttonLeft.Click});
+                Instance::GetWorkQueue().TryAdd({touchController->buttonLeft.Click});
             }
             if (keyRight.IsClicked()) {
-                WorkQueue::workQueue.TryAdd({touchController->buttonRight.Click});
+                Instance::GetWorkQueue().TryAdd({touchController->buttonRight.Click});
             }
             //            if (LinRots[0].p_Data->Change && LinRots[0].p_Data->StateId == TSL_STATEID_DETECT) {
             //                detectPosition = LinRots[0].p_Data->Position;

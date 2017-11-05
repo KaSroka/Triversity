@@ -133,7 +133,7 @@ class Label : public Widget {
     bool mEnabled{false};
     bool mScrollHold{true};
     static constexpr float mSpeed{15.0f};
-    static constexpr auto mHoldTime{700ms};
+    const std::chrono::milliseconds mHoldTime{700ms};
 };
 }
 

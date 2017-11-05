@@ -43,6 +43,8 @@
  * CLASS
  */
 
+namespace Video {
+
 #define _CHANNEL_REG_FLO(f) ((f - 479) / 2)
 #define _CHANNEL_REG_N(f) (_CHANNEL_REG_FLO(f) / 32)
 #define _CHANNEL_REG_A(f) (_CHANNEL_REG_FLO(f) % 32)
@@ -146,14 +148,15 @@ class RX5808 : private microhal::SPIDevice {
         Write(transaction);
     }
 };
+}
 
 namespace std {
 template <>
-class numeric_limits<Channels::Channel> {
+class numeric_limits<Video::Channels::Channel> {
  public:
-    static Channels::Channel lowest() { return Channels::START; };
-    static Channels::Channel min() { return Channels::START; };
-    static Channels::Channel max() { return static_cast<Channels::Channel>(Channels::END - 1); };
+    static Video::Channels::Channel lowest() { return Video::Channels::START; };
+    static Video::Channels::Channel min() { return Video::Channels::START; };
+    static Video::Channels::Channel max() { return static_cast<Video::Channels::Channel>(Video::Channels::END - 1); };
 };
 }
 

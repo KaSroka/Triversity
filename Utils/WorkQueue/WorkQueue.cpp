@@ -34,24 +34,16 @@
 
 using namespace microhal;
 
-namespace WorkQueue {
-
 static volatile UBaseType_t uxHighWaterMarkwq;
 
 void WorkQueue::WorkThread(void* arg) noexcept {
     QueueHandle_t* queue = static_cast<QueueHandle_t*>(arg);
     WorkRequest request;
-    uint32_t cnt = 0;
+
     while (1) {
         xQueueReceive(queue, &request, portMAX_DELAY);
         request.mSignal.emit(request.mArg);
-        cnt++;
-        if (cnt == 1000) {
-            cnt = 0;
-            uxHighWaterMarkwq = uxTaskGetStackHighWaterMark(NULL);
-        }
-    }
-}
 
-WorkQueue workQueue;
+        uxHighWaterMarkwq = uxTaskGetStackHighWaterMark(NULL);
+    }
 }

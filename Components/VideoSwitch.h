@@ -39,7 +39,7 @@
 /* **************************************************************************************************************************************************
  * CLASS
  */
-
+namespace Video {
 class VideoSwitch {
  public:
     VideoSwitch(std::array<microhal::GPIO::IOPin, 3> aEnRx, microhal::GPIO::IOPin aEnOSD, microhal::GPIO::IOPin aEnNoOSD)
@@ -68,5 +68,6 @@ class VideoSwitch {
     microhal::GPIO mEnOSD;
     microhal::GPIO mEnNoOSD;
 };
+}
 
 #endif  // _MICROHAL_VIDEOSWITCH_H_

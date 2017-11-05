@@ -37,6 +37,9 @@
 
 #include "Drawing.h"
 #include "Memory.h"
+#include "Widgets.h"
+
+#include "FIR.h"
 
 /* **************************************************************************************************************************************************
  * CLASS
@@ -45,33 +48,38 @@
 namespace Drawing {
 class StatusBar : public Window {
  public:
-    StatusBar() : Window{{container}, {{0, 0}, {128, 16}}} { container.SetSize(GetSize()); }
+    StatusBar() : Window{{mContainer}, {{0, 0}, {128, 16}}} { mContainer.SetSize(GetSize()); }
 
-    void SetVoltage(float aVoltage) { voltage.SetValue((int32_t)(aVoltage * 10 / 3.0f)); }
-    void SetRSSI(float aRSSI, size_t aChannel) { rssi[aChannel].SetRange(aRSSI); }
+    void SetVoltage(float aVoltage) { mVoltage.SetValue((int32_t)(mVoltageFIR.Update(aVoltage) * 10 / 3.0f)); }
+    void SetRSSI(float aRSSI, size_t aChannel) { mRssi[aChannel].SetRange(mRssiFIR[aChannel].Update(aRSSI)); }
     void SetSelectedRx(size_t aSelected) {
-        for (size_t i = 0; i < rssi.size(); i++) {
-            rssi[i].SetSelected(i == aSelected);
+        for (size_t i = 0; i < mRssi.size(); i++) {
+            mRssi[i].SetSelected(i == aSelected);
         }
     }
 
  private:
-    Number voltage{Fonts::RobotoLight::pt10};
+    Number mVoltage{Fonts::RobotoLight::pt10};
+    FIR mVoltageFIR{};
     Label vSign{Fonts::RobotoLight::pt10, "V"};
-    std::array<Label, 3> rssiNum{{{Fonts::RobotoLight::pt10, "1"}, {Fonts::RobotoLight::pt10, "2"}, {Fonts::RobotoLight::pt10, "3"}}};
-    std::array<Range, 3> rssi{};
-    EmptyWidget spacer{};
-    HContainer container{{voltage, 1.0f},    {spacer, 0.6f},  {rssiNum[2], 0.3f}, {rssi[2], 0.5f},    {spacer, 0.3f},
-                         {rssiNum[0], 0.3f}, {rssi[0], 0.5f}, {spacer, 0.3f},     {rssiNum[1], 0.3f}, {rssi[1], 0.5f}};
+    std::array<Label, 3> mRssiNum{{{Fonts::RobotoLight::pt10, "1"}, {Fonts::RobotoLight::pt10, "2"}, {Fonts::RobotoLight::pt10, "3"}}};
+    std::array<Range, 3> mRssi{};
+    std::array<FIR, 3> mRssiFIR{};
+    EmptyWidget mSpacer{};
+    HContainer mContainer{{mVoltage, 1.0f},    {mSpacer, 0.6f},  {mRssiNum[2], 0.3f}, {mRssi[2], 0.5f},    {mSpacer, 0.3f},
+                          {mRssiNum[0], 0.3f}, {mRssi[0], 0.5f}, {mSpacer, 0.3f},     {mRssiNum[1], 0.3f}, {mRssi[1], 0.5f}};
 };
 
 class MainWindow : public Window {
  private:
-    void JumpToChild() { windowManager.SetCurrentWindow(mChild); }
+    void JumpToChild() noexcept;
 
  public:
-    MainWindow(Window& aChild, WatchedExternalMemoryObject<Channels::Channel>& aChannel)
-        : Window{{mList}, {{0, 16}, {128, 48}}}, mChild{&aChild}, mChannel{aChannel, "Channel:"} {
+    MainWindow(Window& aChild, Memory::ExternalMemoryMap& aMemoryMap)
+        : Window{{mList}, {{0, 16}, {128, 48}}},
+          mChild{&aChild},
+          mChannel{aMemoryMap.CreateWatchedObject<Video::Channels::Channel>(Video::Channels::A0)},
+          mChannelUD{mChannel, "Channel:"} {
         mList.SetSize(GetSize());
         mChildButton.CallbackFunction.connect(mSubMenu, *this);
     }
@@ -89,17 +97,20 @@ class MainWindow : public Window {
         }
     }
 
+    Memory::WatchedExternalMemoryObject<Video::Channels::Channel>& GetChannel() { return mChannel; }
+
  private:
     Window* mChild;
-    ValueUpDown<WatchedExternalMemoryObject<Channels::Channel>> mChannel;
+    Memory::WatchedExternalMemoryObject<Video::Channels::Channel> mChannel;
+    ValueUpDown<Memory::WatchedExternalMemoryObject<Video::Channels::Channel>> mChannelUD;
     Button mChildButton{"Sub menu"};
     microhal::Slot_0<MainWindow, &MainWindow::JumpToChild> mSubMenu{};
-    ScrollableList mList{mChannel, mChildButton};
+    ScrollableList mList{mChannelUD, mChildButton};
 };
 
 class SubWindow : public Window {
  private:
-    void Exit() { windowManager.SetCurrentWindow(mParent); }
+    void Exit() noexcept;
 
  public:
     SubWindow() : Window{{mList}, {{0, 16}, {128, 48}}}, mParent{nullptr} {

@@ -5,8 +5,8 @@
  * @brief
  *
  * @authors    kamil
- * created on: 14-08-2017
- * last modification: 14-08-2017
+ * created on: 04-11-2017
+ * last modification: 04-11-2017
  *
  * @copyright Copyright (c) 2017, microHAL
  * All rights reserved.
@@ -27,38 +27,34 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MICROHAL_WORKQUEUET_H_
-#define _MICROHAL_WORKQUEUET_H_
-
+#ifndef _MICROHAL_FIR_H_
+#define _MICROHAL_FIR_H_
 /* **************************************************************************************************************************************************
  * INCLUDES
  */
+#include <algorithm>
+#include <array>
+#include <numeric>
 
 #include "microhal.h"
 
-#include "WorkRequest.h"
+/* **************************************************************************************************************************************************
+ * CLASS
+ */
 
-using namespace microhal;
-
-class WorkQueue {
+class FIR {
  public:
-    WorkQueue() noexcept {
-        mWorkQueue = xQueueCreate(10, sizeof(WorkRequest));
-        xTaskCreate(WorkThread, "WQ", 256, mWorkQueue, 1, nullptr);
+    FIR() : mBuff{} {}
+
+    float Update(float aNewValue) {
+        std::rotate(mBuff.begin(), mBuff.begin() + 1, mBuff.end());
+        mBuff[0] = aNewValue;
+        return std::inner_product(mBuff.begin(), mBuff.end(), mCoeffs.begin(), 0.0f);
     }
 
-    void Add(WorkRequest aRequest) noexcept { xQueueSend(mWorkQueue, &aRequest, portMAX_DELAY); }
-
-    bool TryAdd(WorkRequest aRequest) noexcept { return xQueueSend(mWorkQueue, &aRequest, 0) == pdTRUE; }
-
-    bool AddFromISR(WorkRequest aRequest, BaseType_t& aHigherPriorityTaskWoken) noexcept {
-        return xQueueSendFromISR(mWorkQueue, &aRequest, &aHigherPriorityTaskWoken) == pdTRUE;
-    }
-
- private:
-    static void WorkThread(void* arg) noexcept;
-
-    QueueHandle_t mWorkQueue;
+    static constexpr std::array<float, 9> mCoeffs{
+        {0.088008323f, 0.10454190f, 0.11747384f, 0.12570836f, 0.12853517f, 0.12570836f, 0.11747384f, 0.10454190f, 0.088008323f}};
+    std::array<float, 9> mBuff;
 };
 
-#endif  // _MICROHAL_WORKQUEUET_H_
+#endif  // _MICROHAL_FIR_H_

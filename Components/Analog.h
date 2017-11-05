@@ -43,8 +43,6 @@
  * CLASS
  */
 
-extern ExternalMemoryMap memoryMap;
-
 extern "C" void DMA1_Channel1_IRQHandler(void);
 
 class Analog {
@@ -73,36 +71,23 @@ class Analog {
     };
 
     struct RSSIData {
-        ExternalMemoryObject<float> mMin;
-        ExternalMemoryObject<float> mMax;
+        Memory::ExternalMemoryObject<float> mMin;
+        Memory::ExternalMemoryObject<float> mMax;
     };
 
     friend void DMA1_Channel1_IRQHandler(void);
-    void Update(WorkRequestArg &aRequest) {
-        mVoltage = mAdcData.mVoltage * Params::RefVoltage / Params::AdcRange * (Params::Voltage::LowerRes + Params::Voltage::UpperRes) /
-                   Params::Voltage::LowerRes;
-        for (size_t i = 0; i < mAdcData.mRSSI.size(); i++) {
-            float voltage = mAdcData.mRSSI[i] * Params::RefVoltage / Params::AdcRange * (Params::RSSI::LowerRes + Params::RSSI::UpperRes) /
-                            Params::RSSI::LowerRes;
-
-            if (voltage < mRSSIData[i].mMin) mRSSIData[i].mMin = voltage;
-            if (voltage > mRSSIData[i].mMax) mRSSIData[i].mMax = voltage;
-
-            mRSSI[i] = (voltage - mRSSIData[i].mMin) / (mRSSIData[i].mMax - mRSSIData[i].mMin);
-        }
-
-        WorkQueue::workQueue.Add({VoltageUpdate, GetVoltage()});
-        for (size_t i = 0; i < mRSSI.size(); i++) {
-            WorkQueue::workQueue.Add({RSSIUpdate[i], GetRSSI(i)});
-        }
-    }
+    void Update(WorkRequestArg &aRequest) noexcept;
 
  public:
-    Analog() noexcept;
+    Analog(Memory::ExternalMemoryMap &aMemoryMap) noexcept
+        : mRSSIData{{{aMemoryMap.CreateObject<float>(3.3f, 0.0f, 3.3f), aMemoryMap.CreateObject<float>(0.0f, 0.0f, 3.3f)},
+                     {aMemoryMap.CreateObject<float>(3.3f, 0.0f, 3.3f), aMemoryMap.CreateObject<float>(0.0f, 0.0f, 3.3f)},
+                     {aMemoryMap.CreateObject<float>(3.3f, 0.0f, 3.3f), aMemoryMap.CreateObject<float>(0.0f, 0.0f, 3.3f)}}} {}
+    void Init() noexcept;
     float GetVoltage() const noexcept { return mVoltage; }
     float GetRSSI(size_t aChannel) const noexcept { return mRSSI[aChannel]; }
 
-    microhal::Signal<WorkRequestArg &> RSSIUpdate[3];
+    microhal::Signal<WorkRequestArg &> RSSIUpdate;
     microhal::Signal<WorkRequestArg &> VoltageUpdate;
 
  private:
@@ -111,9 +96,7 @@ class Analog {
     AdcData mAdcData{0, {{0, 0, 0}}};
     float mVoltage{0};
     std::array<float, 3> mRSSI{{0, 0, 0}};
-    std::array<RSSIData, 3> mRSSIData{{{memoryMap.CreateObject<float>(3.3f, 0.0f, 3.3f), memoryMap.CreateObject<float>(0.0f, 0.0f, 3.3f)},
-                                       {memoryMap.CreateObject<float>(3.3f, 0.0f, 3.3f), memoryMap.CreateObject<float>(0.0f, 0.0f, 3.3f)},
-                                       {memoryMap.CreateObject<float>(3.3f, 0.0f, 3.3f), memoryMap.CreateObject<float>(0.0f, 0.0f, 3.3f)}}};
+    std::array<RSSIData, 3> mRSSIData;
 };
 
 #endif  // _ANALOG_H_

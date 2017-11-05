@@ -68,8 +68,6 @@ class WindowManager {
     Window* mNewStatusBar;
     Window* mNewWindow;
 };
-
-extern WindowManager windowManager;
 }
 
 #endif  // _MICROHAL_WINDOWMANAGER_H_

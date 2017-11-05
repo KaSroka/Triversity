@@ -33,8 +33,7 @@
 
 #include "ports/stm32f3xx/device/stm32f3xx.h"
 
-#include "microhal.h"
-#include "microhal_bsp.h"
+#include "Instance.h"
 
 static TimerHandle_t ADCTimer;
 
@@ -42,7 +41,7 @@ void StartADC(TimerHandle_t xTimer) {
     ADC1->CR2 |= ADC_CR2_SWSTART;
 }
 
-Analog::Analog() {
+void Analog::Init() {
     mUpdate.connect(mUpdateSlot, *this);
 
     RCC->AHBENR |= RCC_AHBENR_DMA1EN;
@@ -64,14 +63,31 @@ Analog::Analog() {
     NVIC_SetPriority(DMA1_Channel1_IRQn, 5);
     NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
-    ADCTimer = xTimerCreate("ADC", pdMS_TO_TICKS(20), pdTRUE, NULL, StartADC);
+    ADCTimer = xTimerCreate("ADC", pdMS_TO_TICKS(50), pdTRUE, NULL, StartADC);
     assert(ADCTimer);
     xTimerStart(ADCTimer, 0);
+}
+
+void Analog::Update(WorkRequestArg &aRequest) {
+    mVoltage = mAdcData.mVoltage * Params::RefVoltage / Params::AdcRange * (Params::Voltage::LowerRes + Params::Voltage::UpperRes) /
+               Params::Voltage::LowerRes;
+    for (size_t i = 0; i < mAdcData.mRSSI.size(); i++) {
+        float voltage =
+            mAdcData.mRSSI[i] * Params::RefVoltage / Params::AdcRange * (Params::RSSI::LowerRes + Params::RSSI::UpperRes) / Params::RSSI::LowerRes;
+
+        if (voltage < mRSSIData[i].mMin) mRSSIData[i].mMin = voltage;
+        if (voltage > mRSSIData[i].mMax) mRSSIData[i].mMax = voltage;
+
+        mRSSI[i] = (voltage - mRSSIData[i].mMin) / (mRSSIData[i].mMax - mRSSIData[i].mMin);
+    }
+
+    Instance::GetWorkQueue().Add({VoltageUpdate, WorkRequestArg{.Voltage = GetVoltage()}});
+    Instance::GetWorkQueue().Add({RSSIUpdate, WorkRequestArg{{.RSSI1 = GetRSSI(0), .RSSI2 = GetRSSI(1), .RSSI3 = GetRSSI(2)}}});
 }
 
 void DMA1_Channel1_IRQHandler(void) {
     BaseType_t xHigherPriorityTaskWoken;
     DMA1->IFCR |= DMA_IFCR_CTCIF1;
-    WorkQueue::workQueue.AddFromISR({analog.mUpdate}, xHigherPriorityTaskWoken);
+    Instance::GetWorkQueue().AddFromISR({Instance::GetAnalog().mUpdate}, xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }

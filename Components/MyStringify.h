@@ -40,7 +40,7 @@
 #include "RX5808.h"
 
 namespace std {
-std::string toString(Channels::Channel aChannel);
+std::string toString(Video::Channels::Channel aChannel);
 }
 
 #endif  // _MICROHAL_MYSTRINGIFY_H_

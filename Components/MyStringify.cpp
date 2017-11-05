@@ -34,7 +34,7 @@
 #include "MyStringify.h"
 
 namespace std {
-std::string toString(Channels::Channel aChannel) {
-    return Channels::GetByChannel(aChannel).GetName();
+std::string toString(Video::Channels::Channel aChannel) {
+    return Video::Channels::GetByChannel(aChannel).GetName();
 }
 }
